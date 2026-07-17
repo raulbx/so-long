@@ -5,6 +5,7 @@
 #include "Config.h"
 #include "FriendManager.h"
 #include "Friends.h"
+#include "Identity.h"
 #include "UWBManager.h"
 
 CRGB leds[SoLongConfig::LED_COUNT];
@@ -12,7 +13,7 @@ AnimationEngine animation(leds, SoLongConfig::LED_COUNT);
 FriendManager friendManager;
 UWBManager uwb;
 
-FriendId activeFriendId = FriendId::JENNIFER;
+FriendId activeFriendId = MY_FRIEND;
 
 const FriendInfo* findFriend(FriendId id) {
   for (size_t i = 0; i < FRIEND_COUNT; i++) {
