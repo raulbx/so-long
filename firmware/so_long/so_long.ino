@@ -3,17 +3,16 @@
 
 #include "AnimationEngine.h"
 #include "Config.h"
+#include "FriendManager.h"
 #include "Friends.h"
 #include "UWBManager.h"
 
 CRGB leds[SoLongConfig::LED_COUNT];
 AnimationEngine animation(leds, SoLongConfig::LED_COUNT);
+FriendManager friendManager;
 UWBManager uwb;
 
 FriendId activeFriendId = FriendId::JENNIFER;
-HeartState activeHeartState = HeartState::AMBIENT;
-uint32_t lastFriendRangeMs = 0;
-float lastFriendDistanceM = 0.0f;
 
 const FriendInfo* findFriend(FriendId id) {
   for (size_t i = 0; i < FRIEND_COUNT; i++) {
@@ -22,16 +21,6 @@ const FriendInfo* findFriend(FriendId id) {
     }
   }
   return nullptr;
-}
-
-HeartState heartStateForDistance(float distanceM) {
-  if (distanceM < 1.0f) {
-    return HeartState::FRIEND_FOUND;
-  }
-  if (distanceM < 3.0f) {
-    return HeartState::FRIEND_NEAR;
-  }
-  return HeartState::FRIEND_DETECTED;
 }
 
 uint16_t cometSpeedForDistance(float distanceM) {
@@ -44,48 +33,46 @@ uint16_t cometSpeedForDistance(float distanceM) {
   return SoLongConfig::COMET_SLOW_MS;
 }
 
-void observeFriend(FriendId friendId, float distanceM) {
-  activeFriendId = friendId;
-  lastFriendDistanceM = distanceM;
-  lastFriendRangeMs = millis();
+void applyFriendToAnimation(const FriendObservation* observation,
+                            HeartState heartState) {
+  if (observation == nullptr) {
+    animation.setHeartState(heartState);
+    return;
+  }
 
-  const FriendInfo* friendInfo = findFriend(friendId);
+  activeFriendId = observation->id;
+  const FriendInfo* friendInfo = findFriend(observation->id);
   if (friendInfo != nullptr) {
     animation.setFriendColor(friendInfo->color);
   }
 
-  activeHeartState = heartStateForDistance(distanceM);
-  animation.setHeartState(activeHeartState);
-  animation.setCometSpeedMs(cometSpeedForDistance(distanceM));
-}
-
-void updateFriendTimeout() {
-  if (activeHeartState == HeartState::AMBIENT) {
-    return;
-  }
-
-  if (millis() - lastFriendRangeMs > SoLongConfig::FRIEND_TIMEOUT_MS) {
-    activeHeartState = HeartState::AMBIENT;
-    animation.setHeartState(activeHeartState);
-  }
+  animation.setHeartState(heartState);
+  animation.setCometSpeedMs(cometSpeedForDistance(observation->distanceM));
 }
 
 void setup() {
   FastLED.addLeds<WS2811, SoLongConfig::LED_DATA_PIN,
-                  SoLongConfig::LED_COLOR_ORDER>(
+                  SO_LONG_LED_COLOR_ORDER>(
       leds, SoLongConfig::LED_COUNT);
 
   animation.begin();
-  animation.setCometSpeedMs(90);
-  observeFriend(FriendId::JENNIFER, 100.0f);
+  animation.setCometSpeedMs(SoLongConfig::COMET_SLOW_MS);
+  friendManager.begin();
 
   uwb.begin();
 }
 
 void loop() {
+  const uint32_t nowMs = millis();
+
   if (uwb.update()) {
-    observeFriend(FriendId::JENNIFER, uwb.latestDistanceMeters());
+    friendManager.observe(FriendId::JENNIFER, uwb.latestDistanceMeters(), nowMs);
   }
+
+  friendManager.update(nowMs);
+  applyFriendToAnimation(friendManager.nearestFriend(),
+                         friendManager.heartState());
+
   for (int i = 0; i < 4; i++) {
     animation.update();
   }
