@@ -1,15 +1,4 @@
 #include <assert.h>
-#include <stdint.h>
-
-enum class FriendId : uint8_t {
-  RAHUL,
-  JENNIFER,
-  MIKE,
-  MAGGIE,
-  JAMES,
-  MAX,
-};
-
 #include "FriendManager.h"
 
 int main() {

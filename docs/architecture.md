@@ -48,13 +48,8 @@ AnimationEngine
     ↓
 FastLED
 
-Then briefly describe each layer:
-
-```markdown
 ### UWBManager
-
 Interfaces with the DW3000 hardware.
-
 Responsible for:
 
 - Sending packets
@@ -62,9 +57,7 @@ Responsible for:
 - Measuring distance
 
 ### Protocol
-
 Encodes and decodes protocol packets.
-
 Responsible for:
 
 - Packet parsing
@@ -73,9 +66,7 @@ Responsible for:
 - Translating bytes into domain concepts
 
 ### FriendManager
-
 Maintains the current model of nearby friends.
-
 Responsible for:
 
 - Observations
@@ -84,13 +75,10 @@ Responsible for:
 - Nearest friend
 
 ### HeartState
-
 Determines the heart's emotional state based on current presence and events.
 
 ### AnimationEngine
-
 Maps HeartState to LED animations.
 
 ### FastLED
-
 Drives the LEDs.

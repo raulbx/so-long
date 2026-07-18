@@ -2,9 +2,8 @@
 
 #include <Arduino.h>
 
+#include "FriendId.h"
 #include "HeartState.h"
-
-enum class FriendId : uint8_t;
 
 struct FriendObservation {
   FriendId id;

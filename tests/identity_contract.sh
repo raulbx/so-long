@@ -2,9 +2,11 @@
 set -eu
 
 test -f firmware/so_long/Identity.h
+test -f firmware/so_long/NodeId.h
 
 rg "constexpr FriendId MY_FRIEND = FriendId::RAHUL" firmware/so_long/Identity.h >/dev/null
-rg "constexpr uint8_t MY_NODE_ID = 1" firmware/so_long/Identity.h >/dev/null
+rg "using NodeId = uint8_t" firmware/so_long/NodeId.h >/dev/null
+rg "constexpr NodeId MY_NODE_ID = 1" firmware/so_long/Identity.h >/dev/null
 rg "FriendId = who the heart belongs to" firmware/so_long/Identity.h >/dev/null
 rg "NodeId = which physical radio/device this is" firmware/so_long/Identity.h >/dev/null
 

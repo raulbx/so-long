@@ -3,14 +3,7 @@
 #include <Arduino.h>
 #include <FastLED.h>
 
-enum class FriendId : uint8_t {
-  RAHUL,
-  JENNIFER,
-  MIKE,
-  MAGGIE,
-  JAMES,
-  MAX,
-};
+#include "FriendId.h"
 
 struct FriendInfo {
   FriendId id;
