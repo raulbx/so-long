@@ -3,6 +3,12 @@ set -eu
 
 test -f firmware/so_long/FriendManager.h
 test -f firmware/so_long/FriendManager.cpp
+test -f firmware/so_long/PresenceObservation.h
+
+rg "struct PresenceObservation" firmware/so_long/PresenceObservation.h >/dev/null
+rg "NodeId nodeId" firmware/so_long/PresenceObservation.h >/dev/null
+rg "FriendId friendId" firmware/so_long/PresenceObservation.h >/dev/null
+rg "float distanceMeters" firmware/so_long/PresenceObservation.h >/dev/null
 
 rg "struct FriendObservation" firmware/so_long/FriendManager.h >/dev/null
 rg "FriendId id" firmware/so_long/FriendManager.h >/dev/null
@@ -11,7 +17,7 @@ rg "uint32_t lastSeenMs" firmware/so_long/FriendManager.h >/dev/null
 rg "bool visible" firmware/so_long/FriendManager.h >/dev/null
 
 rg "void begin\\(\\)" firmware/so_long/FriendManager.h >/dev/null
-rg "void observe\\(FriendId id, float distanceM, uint32_t nowMs\\)" firmware/so_long/FriendManager.h >/dev/null
+rg "void observe\\(const PresenceObservation& observation, uint32_t nowMs\\)" firmware/so_long/FriendManager.h >/dev/null
 rg "void update\\(uint32_t nowMs\\)" firmware/so_long/FriendManager.h >/dev/null
 rg "bool hasVisibleFriend\\(\\) const" firmware/so_long/FriendManager.h >/dev/null
 rg "const FriendObservation\\* nearestFriend\\(\\) const" firmware/so_long/FriendManager.h >/dev/null
@@ -30,7 +36,9 @@ if rg "dw3000|UWBManager|FastLED|AnimationEngine|CRGB|new |std::|vector|map" fir
 fi
 
 rg "#include \"FriendManager.h\"" firmware/so_long/so_long.ino >/dev/null
-rg "friendManager\\.observe\\(FriendId::JENNIFER, uwb\\.latestDistanceMeters\\(\\), nowMs\\)" firmware/so_long/so_long.ino >/dev/null
+rg "FriendId::JENNIFER" firmware/so_long/so_long.ino >/dev/null
+rg "uwb\\.latestDistanceMeters\\(\\)" firmware/so_long/so_long.ino >/dev/null
+rg "friendManager\\.observe\\(observation, nowMs\\)" firmware/so_long/so_long.ino >/dev/null
 rg "friendManager\\.update\\(nowMs\\)" firmware/so_long/so_long.ino >/dev/null
 rg "friendManager\\.nearestFriend\\(\\)" firmware/so_long/so_long.ino >/dev/null
 rg "friendManager\\.heartState\\(\\)" firmware/so_long/so_long.ino >/dev/null

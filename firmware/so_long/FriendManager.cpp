@@ -15,13 +15,14 @@ void FriendManager::begin() {
   nearestFriend_ = nullptr;
 }
 
-void FriendManager::observe(FriendId id, float distanceM, uint32_t nowMs) {
-  const int8_t index = indexFor(id);
+void FriendManager::observe(const PresenceObservation& observation,
+                            uint32_t nowMs) {
+  const int8_t index = indexFor(observation.friendId);
   if (index < 0) {
     return;
   }
 
-  observations_[index].distanceM = distanceM;
+  observations_[index].distanceM = observation.distanceMeters;
   observations_[index].lastSeenMs = nowMs;
   observations_[index].visible = true;
 }

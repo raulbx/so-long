@@ -14,6 +14,7 @@ FriendManager friendManager;
 UWBManager uwb;
 
 FriendId activeFriendId = MY_FRIEND;
+constexpr NodeId CURRENT_TEST_RESPONDER_NODE_ID = 2;
 
 const FriendInfo* findFriend(FriendId id) {
   for (size_t i = 0; i < FRIEND_COUNT; i++) {
@@ -67,7 +68,12 @@ void loop() {
   const uint32_t nowMs = millis();
 
   if (uwb.update()) {
-    friendManager.observe(FriendId::JENNIFER, uwb.latestDistanceMeters(), nowMs);
+    const PresenceObservation observation{
+        CURRENT_TEST_RESPONDER_NODE_ID,
+        FriendId::JENNIFER,
+        uwb.latestDistanceMeters(),
+    };
+    friendManager.observe(observation, nowMs);
   }
 
   friendManager.update(nowMs);

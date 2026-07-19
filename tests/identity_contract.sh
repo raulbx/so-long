@@ -12,7 +12,9 @@ rg "NodeId = which physical radio/device this is" firmware/so_long/Identity.h >/
 
 rg "#include \"Identity.h\"" firmware/so_long/so_long.ino >/dev/null
 rg "FriendId activeFriendId = MY_FRIEND" firmware/so_long/so_long.ino >/dev/null
-rg "friendManager\\.observe\\(FriendId::JENNIFER, uwb\\.latestDistanceMeters\\(\\), nowMs\\)" firmware/so_long/so_long.ino >/dev/null
+rg "FriendId::JENNIFER" firmware/so_long/so_long.ino >/dev/null
+rg "uwb\\.latestDistanceMeters\\(\\)" firmware/so_long/so_long.ino >/dev/null
+rg "friendManager\\.observe\\(observation, nowMs\\)" firmware/so_long/so_long.ino >/dev/null
 
 if rg "MY_NODE_ID" firmware/so_long/UWBManager.cpp firmware/so_long/UWBManager.h >/dev/null; then
   exit 1

@@ -4,6 +4,7 @@
 
 #include "FriendId.h"
 #include "HeartState.h"
+#include "PresenceObservation.h"
 
 struct FriendObservation {
   FriendId id;
@@ -15,7 +16,7 @@ struct FriendObservation {
 class FriendManager {
  public:
   void begin();
-  void observe(FriendId id, float distanceM, uint32_t nowMs);
+  void observe(const PresenceObservation& observation, uint32_t nowMs);
   void update(uint32_t nowMs);
 
   bool hasVisibleFriend() const;
