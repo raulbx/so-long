@@ -21,8 +21,7 @@ rg "dwt_setrxtimeout\\(RESP_RX_TIMEOUT_UUS\\)" firmware/so_long/UWBManager.cpp >
 rg "#include \"UWBManager.h\"" firmware/so_long/so_long.ino >/dev/null
 rg "uwb.begin\\(\\)" firmware/so_long/so_long.ino >/dev/null
 rg "uwb.update\\(\\)" firmware/so_long/so_long.ino >/dev/null
-rg "uwb.latestDistanceMeters\\(\\)" firmware/so_long/so_long.ino >/dev/null
-rg "FriendId::JENNIFER" firmware/so_long/so_long.ino >/dev/null
+rg "uwb.latestObservation\\(\\)" firmware/so_long/so_long.ino >/dev/null
 
 rg "setCometSpeedMs" firmware/so_long/AnimationEngine.h >/dev/null
 if rg "delay\\(" firmware/so_long/AnimationEngine.cpp firmware/so_long/AnimationEngine.h >/dev/null; then

@@ -36,9 +36,7 @@ if rg "dw3000|UWBManager|FastLED|AnimationEngine|CRGB|new |std::|vector|map" fir
 fi
 
 rg "#include \"FriendManager.h\"" firmware/so_long/so_long.ino >/dev/null
-rg "FriendId::JENNIFER" firmware/so_long/so_long.ino >/dev/null
-rg "uwb\\.latestDistanceMeters\\(\\)" firmware/so_long/so_long.ino >/dev/null
-rg "friendManager\\.observe\\(observation, nowMs\\)" firmware/so_long/so_long.ino >/dev/null
+rg "friendManager\\.observe\\(uwb\\.latestObservation\\(\\), nowMs\\)" firmware/so_long/so_long.ino >/dev/null
 rg "friendManager\\.update\\(nowMs\\)" firmware/so_long/so_long.ino >/dev/null
 rg "friendManager\\.nearestFriend\\(\\)" firmware/so_long/so_long.ino >/dev/null
 rg "friendManager\\.heartState\\(\\)" firmware/so_long/so_long.ino >/dev/null
@@ -47,6 +45,10 @@ if rg "heartStateForDistance|updateFriendTimeout|lastFriendRangeMs|lastFriendDis
   exit 1
 fi
 
-if ! git diff --quiet -- firmware/prototypes/plain_range_tx.ino firmware/prototypes/working_range_rx_with_led.ino; then
+if rg "FriendId::JENNIFER|CURRENT_TEST_RESPONDER_NODE_ID" firmware/so_long/so_long.ino >/dev/null; then
+  exit 1
+fi
+
+if ! git diff --quiet -- firmware/prototypes/working_range_rx_with_led.ino; then
   exit 1
 fi

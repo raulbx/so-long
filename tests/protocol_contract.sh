@@ -27,7 +27,7 @@ int main() {
   };
 
   return packet.version == ProtocolVersion::V1 &&
-                 packet.node == static_cast<NodeId>(1) &&
+                 packet.nodeId == static_cast<NodeId>(1) &&
                  packet.friendId == FriendId::JENNIFER
              ? 0
              : 1;
@@ -39,10 +39,13 @@ c++ -std=c++17 -Itests/stubs -Ifirmware/protocol -Ifirmware/so_long \
   -o /tmp/protocol_contract
 /tmp/protocol_contract
 
-if rg "#include \"\\.\\./protocol|#include \"Protocol" firmware/so_long/UWBManager.* firmware/so_long/FriendManager.* firmware/so_long/AnimationEngine.* firmware/so_long/so_long.ino >/dev/null; then
+if rg "#include \"\\.\\./protocol|#include \"Protocol" firmware/so_long/FriendManager.* firmware/so_long/AnimationEngine.* firmware/so_long/so_long.ino >/dev/null; then
   exit 1
 fi
 
-if ! git diff --quiet -- firmware/prototypes/plain_range_tx.ino firmware/prototypes/working_range_rx_with_led.ino; then
+rg "Protocol::serialize" firmware/prototypes/plain_range_tx.ino >/dev/null
+rg "LOCAL_FRIEND_ID = FriendId::JENNIFER" firmware/prototypes/plain_range_tx.ino >/dev/null
+
+if ! git diff --quiet -- firmware/prototypes/working_range_rx_with_led.ino; then
   exit 1
 fi

@@ -152,6 +152,23 @@ Move FriendId into its own lightweight header. Introduce NodeId as a separate do
 * Rendering concerns remain isolated.
 * Future protocol and simulation code can reuse the domain model independently of hardware.
 
+## ADR-007 - Integrate identity into the UWB ranging protocol
+
+### Decision
+
+Identity is transmitted as part of the ranging exchange rather than a
+
+separate discovery broadcast.
+
+
+### Consequences
+
+- No additional radio airtime
+
+- Identity and range always correspond to the same exchange
+
+- FriendManager receives PresenceObservation rather than transport data
+
 # Future Decisions
 
 - How should board identities be assigned?

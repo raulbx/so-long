@@ -1,5 +1,7 @@
 #include "UWBManager.h"
 
+#include "../protocol/Protocol.h"
+#include "Identity.h"
 #include "dw3000.h"
 
 #include <string.h>
@@ -16,6 +18,10 @@
 #define RESP_MSG_POLL_RX_TS_IDX 10
 #define RESP_MSG_RESP_TX_TS_IDX 14
 #define RESP_MSG_TS_LEN 4
+#define POLL_MSG_PRESENCE_IDX 10
+#define RESP_MSG_PRESENCE_IDX 18
+#define POLL_MSG_FCS_IDX 13
+#define RESP_MSG_FCS_IDX 21
 #define POLL_TX_TO_RESP_RX_DLY_UUS 240
 #define RESP_RX_TIMEOUT_UUS 400
 
@@ -36,10 +42,10 @@ static dwt_config_t config = {
     DWT_PDOA_M0       /* PDOA mode off */
 };
 
-static uint8_t tx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', 'E', 0xE0, 0, 0};
-static uint8_t rx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'V', 'E', 'W', 'A', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static uint8_t tx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', 'E', 0xE0, 0, 0, 0, 0, 0};
+static uint8_t rx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'V', 'E', 'W', 'A', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 static uint8_t frame_seq_nb = 0;
-static uint8_t rx_buffer[20];
+static uint8_t rx_buffer[23];
 static uint32_t status_reg = 0;
 static double tof;
 static double distance;
@@ -102,7 +108,17 @@ bool UWBManager::begin() {
 }
 
 bool UWBManager::update() {
-  bool validDistanceCalculated = false;
+  bool validObservationCalculated = false;
+  const PresencePacket localPresence{
+      ProtocolVersion::V1,
+      MY_NODE_ID,
+      MY_FRIEND,
+  };
+
+  if (!Protocol::serialize(localPresence, &tx_poll_msg[POLL_MSG_PRESENCE_IDX],
+                           Protocol::PRESENCE_PACKET_SIZE)) {
+    return false;
+  }
 
   /* Write frame data to DW IC and prepare transmission. See NOTE 7 below. */
   tx_poll_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
@@ -168,7 +184,20 @@ bool UWBManager::update() {
             filteredDistanceMeters_ = 0.7 * filteredDistanceMeters_ + 0.3 * distance;
           }
           latestDistanceMeters_ = filteredDistanceMeters_;
-          validDistanceCalculated = true;
+
+          if (frame_len >= RESP_MSG_PRESENCE_IDX + Protocol::PRESENCE_PACKET_SIZE) {
+            const PresencePacketResult result =
+                Protocol::deserialize(&rx_buffer[RESP_MSG_PRESENCE_IDX],
+                                      Protocol::PRESENCE_PACKET_SIZE);
+            if (result.valid) {
+              latestObservation_ = {
+                  result.packet.nodeId,
+                  result.packet.friendId,
+                  latestDistanceMeters_,
+              };
+              validObservationCalculated = true;
+            }
+          }
         }
         Serial.print("DIST: ");
         Serial.println(distance);
@@ -183,9 +212,13 @@ bool UWBManager::update() {
     dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR);
   }
 
-  return validDistanceCalculated;
+  return validObservationCalculated;
 }
 
 float UWBManager::latestDistanceMeters() const {
   return latestDistanceMeters_;
+}
+
+PresenceObservation UWBManager::latestObservation() const {
+  return latestObservation_;
 }

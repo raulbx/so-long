@@ -7,6 +7,6 @@
 // PresencePacket represents the domain meaning of a heart announcing itself.
 struct PresencePacket {
   ProtocolVersion version;
-  NodeId node;
+  NodeId nodeId;
   FriendId friendId;
 };

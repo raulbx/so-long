@@ -12,14 +12,10 @@ rg "NodeId = which physical radio/device this is" firmware/so_long/Identity.h >/
 
 rg "#include \"Identity.h\"" firmware/so_long/so_long.ino >/dev/null
 rg "FriendId activeFriendId = MY_FRIEND" firmware/so_long/so_long.ino >/dev/null
-rg "FriendId::JENNIFER" firmware/so_long/so_long.ino >/dev/null
-rg "uwb\\.latestDistanceMeters\\(\\)" firmware/so_long/so_long.ino >/dev/null
-rg "friendManager\\.observe\\(observation, nowMs\\)" firmware/so_long/so_long.ino >/dev/null
+rg "friendManager\\.observe\\(uwb\\.latestObservation\\(\\), nowMs\\)" firmware/so_long/so_long.ino >/dev/null
 
-if rg "MY_NODE_ID" firmware/so_long/UWBManager.cpp firmware/so_long/UWBManager.h >/dev/null; then
-  exit 1
-fi
+rg "MY_NODE_ID" firmware/so_long/UWBManager.cpp >/dev/null
 
-if ! git diff --quiet -- firmware/prototypes/plain_range_tx.ino firmware/prototypes/working_range_rx_with_led.ino; then
+if ! git diff --quiet -- firmware/prototypes/working_range_rx_with_led.ino; then
   exit 1
 fi

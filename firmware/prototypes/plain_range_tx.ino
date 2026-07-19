@@ -2,6 +2,8 @@
 #include "SPI.h"
 #include <FastLED.h>
 
+#include "../protocol/Protocol.h"
+
 extern SPISettings _fastSPI;
 
 #define PIN_RST 27
@@ -15,6 +17,8 @@ extern SPISettings _fastSPI;
 #define RESP_MSG_POLL_RX_TS_IDX 10
 #define RESP_MSG_RESP_TX_TS_IDX 14
 #define RESP_MSG_TS_LEN 4
+#define RESP_MSG_PRESENCE_IDX 18
+#define RESP_MSG_FCS_IDX 21
 #define POLL_RX_TO_RESP_TX_DLY_UUS 450
 
 #define LED_PIN 25
@@ -38,15 +42,18 @@ static dwt_config_t config = {
     DWT_PDOA_M0       /* PDOA mode off */
 };
 
-static uint8_t rx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', 'E', 0xE0, 0, 0};
-static uint8_t tx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'V', 'E', 'W', 'A', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static uint8_t rx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', 'E', 0xE0, 0, 0, 0, 0, 0};
+static uint8_t tx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'V', 'E', 'W', 'A', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 static uint8_t frame_seq_nb = 0;
-static uint8_t rx_buffer[20];
+static uint8_t rx_buffer[15];
 static uint32_t status_reg = 0;
 static uint64_t poll_rx_ts;
 static uint64_t resp_tx_ts;
 
 extern dwt_txconfig_t txconfig_options;
+
+constexpr NodeId LOCAL_NODE_ID = 2;
+constexpr FriendId LOCAL_FRIEND_ID = FriendId::JENNIFER;
 
 void idleComet() {
   static int position = 0;
@@ -157,6 +164,14 @@ void loop()
         /* Write all timestamps in the final message. See NOTE 8 below. */
         resp_msg_set_ts(&tx_resp_msg[RESP_MSG_POLL_RX_TS_IDX], poll_rx_ts);
         resp_msg_set_ts(&tx_resp_msg[RESP_MSG_RESP_TX_TS_IDX], resp_tx_ts);
+        const PresencePacket localPresence{
+            ProtocolVersion::V1,
+            LOCAL_NODE_ID,
+            LOCAL_FRIEND_ID,
+        };
+        if (!Protocol::serialize(localPresence, &tx_resp_msg[RESP_MSG_PRESENCE_IDX], Protocol::PRESENCE_PACKET_SIZE)) {
+          return;
+        }
 
         /* Write and send the response message. See NOTE 9 below. */
         tx_resp_msg[ALL_MSG_SN_IDX] = frame_seq_nb;

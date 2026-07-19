@@ -6,7 +6,7 @@
 void assertPacketEquals(const PresencePacket& packet, ProtocolVersion version,
                         NodeId node, FriendId friendId) {
   assert(packet.version == version);
-  assert(packet.node == node);
+  assert(packet.nodeId == node);
   assert(packet.friendId == friendId);
 }
 
@@ -35,6 +35,25 @@ int main() {
   assert(roundTripBytes[0] == bytes[0]);
   assert(roundTripBytes[1] == bytes[1]);
   assert(roundTripBytes[2] == bytes[2]);
+
+  uint8_t pollFrame[15] = {};
+  const size_t pollPresenceOffset = 10;
+  assert(Protocol::serialize(packet, &pollFrame[pollPresenceOffset],
+                             Protocol::PRESENCE_PACKET_SIZE));
+  assert(pollFrame[13] == 0);
+  assert(pollFrame[14] == 0);
+
+  uint8_t responseFrame[23] = {};
+  const size_t responsePresenceOffset = 18;
+  assert(Protocol::serialize(packet, &responseFrame[responsePresenceOffset],
+                             Protocol::PRESENCE_PACKET_SIZE));
+  const PresencePacketResult transportedResult = Protocol::deserialize(
+      &responseFrame[responsePresenceOffset], Protocol::PRESENCE_PACKET_SIZE);
+  assert(transportedResult.valid);
+  assertPacketEquals(transportedResult.packet, ProtocolVersion::V1, 1,
+                     FriendId::JENNIFER);
+  assert(responseFrame[21] == 0);
+  assert(responseFrame[22] == 0);
 
   const PresencePacket maxFriendPacket{
       ProtocolVersion::V1,
