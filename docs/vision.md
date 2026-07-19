@@ -16,3 +16,4 @@ The long-term experience is a light language:
 - Friend near as distance closes.
 - Friend found when the wearable is very close.
 
+If it does not strengthen human connection, it does not belong.

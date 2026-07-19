@@ -82,3 +82,5 @@ Maps HeartState to LED animations.
 
 ### FastLED
 Drives the LEDs.
+
+Every layer should have one responsibility.

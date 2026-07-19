@@ -136,6 +136,22 @@ Blocking animations interfere with UWB ranging and reduce responsiveness.
 
 All animations are driven from millis().
 
+## ADR-006 — Separate Domain Identity Types
+
+### Context
+
+FriendId was originally defined inside Friends.h, which also contained LED color information. This created an unnecessary dependency between the domain model and the rendering layer.
+
+### Decision
+
+Move FriendId into its own lightweight header. Introduce NodeId as a separate domain type. Identity.h now configures the local node rather than defining shared domain types.
+
+### Consequences
+
+* Protocol can depend on domain identity without pulling in FastLED.
+* Rendering concerns remain isolated.
+* Future protocol and simulation code can reuse the domain model independently of hardware.
+
 # Future Decisions
 
 - How should board identities be assigned?
