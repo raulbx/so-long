@@ -68,7 +68,8 @@ All fields are unsigned 8-bit values unless otherwise specified.
 - Version is always the first byte.
 - Unknown protocol versions are ignored.
 - Unknown FriendIds are ignored.
-- Unknown NodeIds are ignored.
+- NodeId 0 is reserved and invalid.
+- NodeIds 1-255 are accepted.
 - Packets are fixed length.
 
 #### Packet Lifecycle
