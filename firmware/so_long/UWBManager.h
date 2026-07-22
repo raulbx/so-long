@@ -2,17 +2,21 @@
 
 #include <Arduino.h>
 
-#include "PresenceObservation.h"
+enum class UWBReceiveStatus : uint8_t {
+  FrameReceived,
+  TimeoutOrError,
+};
 
 class UWBManager {
  public:
   bool begin();
-  bool update();
-  float latestDistanceMeters() const;
-  PresenceObservation latestObservation() const;
-
- private:
-  float latestDistanceMeters_ = -1.0f;
-  float filteredDistanceMeters_ = -1.0f;
-  PresenceObservation latestObservation_ = {0, FriendId::RAHUL, -1.0f};
+  void transmitAndExpectResponse(uint8_t* data, uint16_t length);
+  UWBReceiveStatus waitForReceive();
+  void clearGoodReceive();
+  void clearReceiveTimeoutOrError();
+  uint16_t receivedFrameLength() const;
+  void readReceivedFrame(uint8_t* buffer, uint16_t length) const;
+  uint32_t txTimestampLo32() const;
+  uint32_t rxTimestampLo32() const;
+  float clockOffsetRatio() const;
 };

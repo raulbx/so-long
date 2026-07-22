@@ -36,7 +36,7 @@ if rg "dw3000|UWBManager|FastLED|AnimationEngine|CRGB|new |std::|vector|map" fir
 fi
 
 rg "#include \"FriendManager.h\"" firmware/so_long/so_long.ino >/dev/null
-rg "friendManager\\.observe\\(uwb\\.latestObservation\\(\\), nowMs\\)" firmware/so_long/so_long.ino >/dev/null
+rg "friendManager\\.observe\\(ranging\\.latestObservation\\(\\), nowMs\\)" firmware/so_long/so_long.ino >/dev/null
 rg "friendManager\\.update\\(nowMs\\)" firmware/so_long/so_long.ino >/dev/null
 rg "friendManager\\.nearestFriend\\(\\)" firmware/so_long/so_long.ino >/dev/null
 rg "friendManager\\.heartState\\(\\)" firmware/so_long/so_long.ino >/dev/null

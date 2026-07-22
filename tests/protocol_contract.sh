@@ -43,8 +43,8 @@ if rg "#include \"\\.\\./protocol|#include \"Protocol" firmware/so_long/FriendMa
   exit 1
 fi
 
-rg "Protocol::serialize" firmware/prototypes/plain_range_tx.ino >/dev/null
-rg "LOCAL_FRIEND_ID = FriendId::JENNIFER" firmware/prototypes/plain_range_tx.ino >/dev/null
+rg "Protocol::serialize" firmware/prototypes/plain_range_tx/plain_range_tx.ino >/dev/null
+rg "LOCAL_FRIEND_ID = FriendId::JENNIFER" firmware/prototypes/plain_range_tx/plain_range_tx.ino >/dev/null
 
 if ! git diff --quiet -- firmware/prototypes/working_range_rx_with_led.ino; then
   exit 1

@@ -6,12 +6,14 @@
 #include "FriendManager.h"
 #include "Friends.h"
 #include "Identity.h"
+#include "RangingEngine.h"
 #include "UWBManager.h"
 
 CRGB leds[SoLongConfig::LED_COUNT];
 AnimationEngine animation(leds, SoLongConfig::LED_COUNT);
 FriendManager friendManager;
 UWBManager uwb;
+RangingEngine ranging(uwb);
 
 FriendId activeFriendId = MY_FRIEND;
 
@@ -74,8 +76,8 @@ void setup() {
 void loop() {
   const uint32_t nowMs = millis();
 
-  if (uwb.update()) {
-    friendManager.observe(uwb.latestObservation(), nowMs);
+  if (ranging.update()) {
+    friendManager.observe(ranging.latestObservation(), nowMs);
   }
 
   friendManager.update(nowMs);
