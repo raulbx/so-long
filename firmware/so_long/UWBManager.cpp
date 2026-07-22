@@ -86,6 +86,7 @@ bool UWBManager::begin() {
 }
 
 void UWBManager::transmitAndExpectResponse(uint8_t* data, uint16_t length) {
+  dwt_forcetrxoff();
   dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS_BIT_MASK);
   dwt_writetxdata(length, data, 0); /* Zero offset in TX buffer. */
   dwt_writetxfctrl(length, 0, 1);   /* Zero offset in TX buffer, ranging. */
@@ -93,6 +94,32 @@ void UWBManager::transmitAndExpectResponse(uint8_t* data, uint16_t length) {
   /* Start transmission, indicating that a response is expected so that reception is enabled automatically after the frame is sent and the delay
    * set by dwt_setrxaftertxdelay() has elapsed. */
   dwt_starttx(DWT_START_TX_IMMEDIATE | DWT_RESPONSE_EXPECTED);
+}
+
+bool UWBManager::transmitDelayed(uint8_t* data, uint16_t length) {
+  dwt_writetxdata(length, data, 0); /* Zero offset in TX buffer. */
+  dwt_writetxfctrl(length, 0, 1);   /* Zero offset in TX buffer, ranging. */
+  return dwt_starttx(DWT_START_TX_DELAYED) == DWT_SUCCESS;
+}
+
+bool UWBManager::enableReceive() {
+  return dwt_rxenable(DWT_START_RX_IMMEDIATE) == DWT_SUCCESS;
+}
+
+uint32_t UWBManager::readStatus() const {
+  return dwt_read32bitreg(SYS_STATUS_ID);
+}
+
+bool UWBManager::hasReceivedFrame(uint32_t status) const {
+  return (status & SYS_STATUS_RXFCG_BIT_MASK) != 0;
+}
+
+bool UWBManager::hasReceiveTimeoutOrError(uint32_t status) const {
+  return (status & (SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) != 0;
+}
+
+bool UWBManager::hasTransmitComplete(uint32_t status) const {
+  return (status & SYS_STATUS_TXFRS_BIT_MASK) != 0;
 }
 
 UWBReceiveStatus UWBManager::waitForReceive() {
@@ -114,6 +141,10 @@ void UWBManager::clearReceiveTimeoutOrError() {
   dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR);
 }
 
+void UWBManager::clearTransmitComplete() {
+  dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS_BIT_MASK);
+}
+
 uint16_t UWBManager::receivedFrameLength() const {
   return static_cast<uint16_t>(dwt_read32bitreg(RX_FINFO_ID) & RXFLEN_MASK);
 }
@@ -130,6 +161,18 @@ uint32_t UWBManager::rxTimestampLo32() const {
   return dwt_readrxtimestamplo32();
 }
 
+uint64_t UWBManager::rxTimestamp64() const {
+  return get_rx_timestamp_u64();
+}
+
 float UWBManager::clockOffsetRatio() const {
   return ((float)dwt_readclockoffset()) / (uint32_t)(1 << 26);
+}
+
+void UWBManager::setDelayedTransmitTime(uint32_t txTime) const {
+  dwt_setdelayedtrxtime(txTime);
+}
+
+uint16_t UWBManager::txAntennaDelay() const {
+  return TX_ANT_DLY;
 }

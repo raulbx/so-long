@@ -13,7 +13,7 @@ CRGB leds[SoLongConfig::LED_COUNT];
 AnimationEngine animation(leds, SoLongConfig::LED_COUNT);
 FriendManager friendManager;
 UWBManager uwb;
-RangingEngine ranging(uwb);
+RangingEngine ranging(uwb, MY_NODE_ID, MY_FRIEND);
 
 FriendId activeFriendId = MY_FRIEND;
 
