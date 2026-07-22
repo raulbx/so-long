@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef SO_LONG_FRIEND_ID_H
+#define SO_LONG_FRIEND_ID_H
+
 #include <Arduino.h>
 
 // FriendId identifies the person a heart belongs to.
@@ -13,3 +16,5 @@ enum class FriendId : uint8_t {
 };
 
 constexpr uint8_t FRIEND_ID_COUNT = 6;
+
+#endif  // SO_LONG_FRIEND_ID_H

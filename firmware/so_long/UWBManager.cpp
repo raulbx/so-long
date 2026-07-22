@@ -10,7 +10,7 @@
 #define PIN_IRQ 34
 #define PIN_SS 4
 
-#define RNG_DELAY_MS 20
+#define RNG_DELAY_MS 100
 #define TX_ANT_DLY 16385
 #define RX_ANT_DLY 16385
 #define ALL_MSG_COMMON_LEN 10
@@ -22,28 +22,28 @@
 #define RESP_MSG_PRESENCE_IDX 18
 #define POLL_MSG_FCS_IDX 13
 #define RESP_MSG_FCS_IDX 21
-#define POLL_TX_TO_RESP_RX_DLY_UUS 240
-#define RESP_RX_TIMEOUT_UUS 400
+#define POLL_TX_TO_RESP_RX_DLY_UUS 900
+#define RESP_RX_TIMEOUT_UUS 800
 
 /* Default communication configuration. We use default non-STS DW mode. */
 static dwt_config_t config = {
-    5,                /* Channel number. */
-    DWT_PLEN_128,     /* Preamble length. Used in TX only. */
-    DWT_PAC8,         /* Preamble acquisition chunk size. Used in RX only. */
-    9,                /* TX preamble code. Used in TX only. */
-    9,                /* RX preamble code. Used in RX only. */
-    1,                /* 0 to use standard 8 symbol SFD, 1 to use non-standard 8 symbol, 2 for non-standard 16 symbol SFD and 3 for 4z 8 symbol SDF type */
-    DWT_BR_6M8,       /* Data rate. */
-    DWT_PHRMODE_STD,  /* PHY header mode. */
-    DWT_PHRRATE_STD,  /* PHY header rate. */
-    (129 + 8 - 8),    /* SFD timeout (preamble length + 1 + SFD length - PAC size). Used in RX only. */
-    DWT_STS_MODE_OFF, /* STS disabled */
-    DWT_STS_LEN_64,   /* STS length see allowed values in Enum dwt_sts_lengths_e */
-    DWT_PDOA_M0       /* PDOA mode off */
+  5,                /* Channel number. */
+  DWT_PLEN_128,     /* Preamble length. Used in TX only. */
+  DWT_PAC8,         /* Preamble acquisition chunk size. Used in RX only. */
+  9,                /* TX preamble code. Used in TX only. */
+  9,                /* RX preamble code. Used in RX only. */
+  1,                /* 0 to use standard 8 symbol SFD, 1 to use non-standard 8 symbol, 2 for non-standard 16 symbol SFD and 3 for 4z 8 symbol SDF type */
+  DWT_BR_6M8,       /* Data rate. */
+  DWT_PHRMODE_STD,  /* PHY header mode. */
+  DWT_PHRRATE_STD,  /* PHY header rate. */
+  (129 + 8 - 8),    /* SFD timeout (preamble length + 1 + SFD length - PAC size). Used in RX only. */
+  DWT_STS_MODE_OFF, /* STS disabled */
+  DWT_STS_LEN_64,   /* STS length see allowed values in Enum dwt_sts_lengths_e */
+  DWT_PDOA_M0       /* PDOA mode off */
 };
 
-static uint8_t tx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', 'E', 0xE0, 0, 0, 0, 0, 0};
-static uint8_t rx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'V', 'E', 'W', 'A', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static uint8_t tx_poll_msg[] = { 0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', 'E', 0xE0, 0, 0, 0, 0, 0 };
+static uint8_t rx_resp_msg[] = { 0x41, 0x88, 0, 0xCA, 0xDE, 'V', 'E', 'W', 'A', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 static uint8_t frame_seq_nb = 0;
 static uint8_t rx_buffer[23];
 static uint32_t status_reg = 0;
@@ -57,27 +57,26 @@ bool UWBManager::begin() {
   spiBegin(PIN_IRQ, PIN_RST);
   spiSelect(PIN_SS);
 
-  delay(2); // Time needed for DW3000 to start up (transition from INIT_RC to IDLE_RC, or could wait for SPIRDY event)
+  delay(2);  // Time needed for DW3000 to start up (transition from INIT_RC to IDLE_RC, or could wait for SPIRDY event)
 
-  while (!dwt_checkidlerc()) // Need to make sure DW IC is in IDLE_RC before proceeding
+  while (!dwt_checkidlerc())  // Need to make sure DW IC is in IDLE_RC before proceeding
   {
     UART_puts("IDLE FAILED\r\n");
     while (1)
       ;
   }
 
-  if (dwt_initialise(DWT_DW_INIT) == DWT_ERROR)
-  {
+  if (dwt_initialise(DWT_DW_INIT) == DWT_ERROR) {
     UART_puts("INIT FAILED\r\n");
     while (1)
       ;
   }
 
   // Enabling LEDs here for debug so that for each TX the D1 LED will flash on DW3000 red eval-shield boards.
- // dwt_setleds(DWT_LEDS_ENABLE | DWT_LEDS_INIT_BLINK);
+  // dwt_setleds(DWT_LEDS_ENABLE | DWT_LEDS_INIT_BLINK);
 
   /* Configure DW IC. See NOTE 6 below. */
-  if (dwt_configure(&config)) // if the dwt_configure returns DWT_ERROR either the PLL or RX calibration has failed the host should reset the device
+  if (dwt_configure(&config))  // if the dwt_configure returns DWT_ERROR either the PLL or RX calibration has failed the host should reset the device
   {
     UART_puts("CONFIG FAILED\r\n");
     while (1)
@@ -108,11 +107,17 @@ bool UWBManager::begin() {
 }
 
 bool UWBManager::update() {
+  static uint32_t lastRangeAttemptMs = 0;
+  const uint32_t nowMs = millis();
+  if (nowMs - lastRangeAttemptMs < RNG_DELAY_MS) {
+    return false;
+  }
+  lastRangeAttemptMs = nowMs;
   bool validObservationCalculated = false;
   const PresencePacket localPresence{
-      ProtocolVersion::V1,
-      MY_NODE_ID,
-      MY_FRIEND,
+    ProtocolVersion::V1,
+    MY_NODE_ID,
+    MY_FRIEND,
   };
 
   if (!Protocol::serialize(localPresence, &tx_poll_msg[POLL_MSG_PRESENCE_IDX],
@@ -131,15 +136,13 @@ bool UWBManager::update() {
   dwt_starttx(DWT_START_TX_IMMEDIATE | DWT_RESPONSE_EXPECTED);
 
   /* We assume that the transmission is achieved correctly, poll for reception of a frame or error/timeout. See NOTE 8 below. */
-  while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG_BIT_MASK | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)))
-  {
+  while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG_BIT_MASK | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {
   };
 
   /* Increment frame sequence number after transmission of the poll message (modulo 256). */
   frame_seq_nb++;
 
-  if (status_reg & SYS_STATUS_RXFCG_BIT_MASK)
-  {
+  if (status_reg & SYS_STATUS_RXFCG_BIT_MASK) {
     uint32_t frame_len;
 
     /* Clear good RX frame event in the DW IC status register. */
@@ -147,15 +150,14 @@ bool UWBManager::update() {
 
     /* A frame has been received, read it into the local buffer. */
     frame_len = dwt_read32bitreg(RX_FINFO_ID) & RXFLEN_MASK;
-    if (frame_len <= sizeof(rx_buffer))
-    {
+    if (frame_len <= sizeof(rx_buffer)) {
       dwt_readrxdata(rx_buffer, frame_len, 0);
 
       /* Check that the frame is the expected response from the companion "SS TWR responder" example.
        * As the sequence number field of the frame is not relevant, it is cleared to simplify the validation of the frame. */
       rx_buffer[ALL_MSG_SN_IDX] = 0;
-      if (memcmp(rx_buffer, rx_resp_msg, ALL_MSG_COMMON_LEN) == 0)
-      {
+      if (memcmp(rx_buffer, rx_resp_msg, ALL_MSG_COMMON_LEN) == 0){
+        // Serial.println("Response header matched");
         uint32_t poll_tx_ts, resp_rx_ts, poll_rx_ts, resp_tx_ts;
         int32_t rtd_init, rtd_resp;
         float clockOffsetRatio;
@@ -187,29 +189,42 @@ bool UWBManager::update() {
 
           if (frame_len >= RESP_MSG_PRESENCE_IDX + Protocol::PRESENCE_PACKET_SIZE) {
             const PresencePacketResult result =
-                Protocol::deserialize(&rx_buffer[RESP_MSG_PRESENCE_IDX],
-                                      Protocol::PRESENCE_PACKET_SIZE);
+              Protocol::deserialize(&rx_buffer[RESP_MSG_PRESENCE_IDX],
+                                    Protocol::PRESENCE_PACKET_SIZE);
             if (result.valid) {
               latestObservation_ = {
-                  result.packet.nodeId,
-                  result.packet.friendId,
-                  latestDistanceMeters_,
+                result.packet.nodeId,
+                result.packet.friendId,
+                latestDistanceMeters_,
               };
               validObservationCalculated = true;
+              Serial.print("Observed Node ID: ");
+              Serial.println(static_cast<uint8_t>(latestObservation_.nodeId));
+
+              Serial.print("Observed Friend ID: ");
+              Serial.println(static_cast<uint8_t>(latestObservation_.friendId));
+
+              Serial.print("Observed Distance: ");
+              Serial.println(latestObservation_.distanceMeters);
             }
           }
         }
-        Serial.print("DIST: ");
-        Serial.println(distance);
-        Serial.print(" Filtered: ");
-        Serial.println(filteredDistanceMeters_);
+        // Serial.print("DIST: ");
+        // Serial.println(distance);
+        // Serial.print(" Filtered: ");
+        // Serial.println(filteredDistanceMeters_);
+      } else {
+        Serial.println("Response header mismatch");
       }
     }
-  }
-  else
-  {
+  } else {
     /* Clear RX error/timeout events in the DW IC status register. */
-    dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR);
+    //dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR);
+    // Serial.print("RX timeout/error. Status = 0x");
+    // Serial.println(status_reg, HEX);
+    dwt_write32bitreg(
+      SYS_STATUS_ID,
+      SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR);
   }
 
   return validObservationCalculated;

@@ -2,7 +2,7 @@
 #include "SPI.h"
 #include <FastLED.h>
 
-#include "../protocol/Protocol.h"
+#include "../../protocol/Protocol.h"
 
 extern SPISettings _fastSPI;
 
@@ -19,7 +19,7 @@ extern SPISettings _fastSPI;
 #define RESP_MSG_TS_LEN 4
 #define RESP_MSG_PRESENCE_IDX 18
 #define RESP_MSG_FCS_IDX 21
-#define POLL_RX_TO_RESP_TX_DLY_UUS 450
+#define POLL_RX_TO_RESP_TX_DLY_UUS 1200
 
 #define LED_PIN 25
 #define NUM_LEDS 50
@@ -69,6 +69,10 @@ void idleComet() {
 
 void setup()
 {
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println("Plan Range TX Sketch starting");
+
   UART_init();
   // FastLED.addLeds<WS2811, LED_PIN, GRB>(leds, NUM_LEDS);
   // FastLED.setBrightness(35);
@@ -139,15 +143,24 @@ void loop()
 
     /* A frame has been received, read it into the local buffer. */
     frame_len = dwt_read32bitreg(RX_FINFO_ID) & RXFLEN_MASK;
+    Serial.print("Received frame length: ");
+    Serial.println(frame_len);
     if (frame_len <= sizeof(rx_buffer))
     {
       dwt_readrxdata(rx_buffer, frame_len, 0);
+      Serial.print("First 10 bytes: ");
+      for (int i = 0; i < 10; i++) {
+        Serial.print(rx_buffer[i], HEX);
+        Serial.print(" ");
+      }
+      Serial.println();
 
       /* Check that the frame is a poll sent by "SS TWR initiator" example.
        * As the sequence number field of the frame is not relevant, it is cleared to simplify the validation of the frame. */
       rx_buffer[ALL_MSG_SN_IDX] = 0;
       if (memcmp(rx_buffer, rx_poll_msg, ALL_MSG_COMMON_LEN) == 0)
       {
+        // Serial.println("Valid poll received");
         uint32_t resp_tx_time;
         int ret;
 
@@ -177,7 +190,10 @@ void loop()
         tx_resp_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
         dwt_writetxdata(sizeof(tx_resp_msg), tx_resp_msg, 0); /* Zero offset in TX buffer. */
         dwt_writetxfctrl(sizeof(tx_resp_msg), 0, 1);          /* Zero offset in TX buffer, ranging. */
+        // Serial.println("Attempting delayed TX");
         ret = dwt_starttx(DWT_START_TX_DELAYED);
+        // Serial.print("dwt_starttx returned ");
+        // Serial.println(ret);
 
         /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 10 below. */
         if (ret == DWT_SUCCESS)

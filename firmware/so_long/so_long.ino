@@ -52,6 +52,14 @@ void applyFriendToAnimation(const FriendObservation* observation,
 }
 
 void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println("Application starting");
+  Serial.print("Node ID: ");
+  Serial.println(static_cast<uint8_t>(MY_NODE_ID));
+  Serial.print("Friend ID: ");
+  Serial.println(static_cast<uint8_t>(MY_FRIEND));
+  
   FastLED.addLeds<WS2811, SoLongConfig::LED_DATA_PIN,
                   SO_LONG_LED_COLOR_ORDER>(
       leds, SoLongConfig::LED_COUNT);
@@ -59,8 +67,8 @@ void setup() {
   animation.begin();
   animation.setCometSpeedMs(SoLongConfig::COMET_SLOW_MS);
   friendManager.begin();
-
-  uwb.begin();
+  bool ok = uwb.begin();
+  Serial.println(ok);
 }
 
 void loop() {
