@@ -40,6 +40,8 @@ class RangingEngine {
   RangingState state_ = RangingState::Listening;
   bool listeningEnabled_ = false;
   uint8_t frameSeq_ = 0;
+  uint32_t lastInitiatedSlot_ = UINT32_MAX;
+  uint8_t slotsToSkip_ = 0;
   uint32_t lastRangeAttemptMs_ = 0;
   float latestDistanceMeters_ = -1.0f;
   float filteredDistanceMeters_ = -1.0f;

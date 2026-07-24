@@ -32,6 +32,13 @@ rg "result.packet.friendId" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "RangingState::Listening" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "RangingState::WaitingForResponse" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "RangingState::SendingResponse" firmware/so_long/RangingEngine.cpp >/dev/null
+rg "case RangingState::SendingResponse:" firmware/so_long/RangingEngine.cpp >/dev/null
+rg "updateSendingResponse\\(\\);" firmware/so_long/RangingEngine.cpp >/dev/null
+rg "return false;" firmware/so_long/RangingEngine.cpp >/dev/null
+
+if sed -n '/bool RangingEngine::handlePollFrame/,/bool RangingEngine::handleResponseFrame/p' firmware/so_long/RangingEngine.cpp | rg "latestObservation_" >/dev/null; then
+  exit 1
+fi
 
 if rg "FriendId|PresencePacket|PresenceObservation|Protocol::|POLL_MSG_PRESENCE_IDX|RESP_MSG_PRESENCE_IDX|tx_poll_msg|rx_resp_msg" firmware/so_long/UWBManager.h firmware/so_long/UWBManager.cpp >/dev/null; then
   exit 1

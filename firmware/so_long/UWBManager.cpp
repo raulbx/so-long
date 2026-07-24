@@ -1,5 +1,6 @@
 #include "UWBManager.h"
 
+#include "Debug.h"
 #include "dw3000.h"
 
 #define PIN_RST 27
@@ -85,7 +86,7 @@ bool UWBManager::begin() {
   return true;
 }
 
-void UWBManager::transmitAndExpectResponse(uint8_t* data, uint16_t length) {
+int UWBManager::transmitAndExpectResponse(uint8_t* data, uint16_t length) {
   dwt_forcetrxoff();
   dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS_BIT_MASK);
   dwt_writetxdata(length, data, 0); /* Zero offset in TX buffer. */
@@ -93,7 +94,14 @@ void UWBManager::transmitAndExpectResponse(uint8_t* data, uint16_t length) {
 
   /* Start transmission, indicating that a response is expected so that reception is enabled automatically after the frame is sent and the delay
    * set by dwt_setrxaftertxdelay() has elapsed. */
-  dwt_starttx(DWT_START_TX_IMMEDIATE | DWT_RESPONSE_EXPECTED);
+  const int result = dwt_starttx(DWT_START_TX_IMMEDIATE | DWT_RESPONSE_EXPECTED);
+#if SO_LONG_UWB_DEBUG
+  if (result != DWT_SUCCESS) {
+    Serial.print("UWBManager: dwt_starttx error ");
+    Serial.println(result);
+  }
+#endif
+  return result;
 }
 
 bool UWBManager::transmitDelayed(uint8_t* data, uint16_t length) {

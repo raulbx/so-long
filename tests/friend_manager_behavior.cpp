@@ -49,6 +49,15 @@ int main() {
   assert(friends.nearestFriend()->distanceM == 1.0f);
   assert(friends.heartState() == HeartState::FRIEND_NEAR);
 
+  FriendManager rahulFriends;
+  rahulFriends.begin();
+  rahulFriends.observe(observation(1, FriendId::RAHUL, 0.93f), 2600);
+  rahulFriends.update(2600);
+  assert(rahulFriends.hasVisibleFriend());
+  assert(rahulFriends.nearestFriend()->id == FriendId::RAHUL);
+  assert(rahulFriends.nearestFriend()->distanceM == 0.93f);
+  assert(rahulFriends.heartState() == HeartState::FRIEND_FOUND);
+
   friends.observe(observation(5, FriendId::MAGGIE, 3.0f), 2500);
   friends.update(2500);
   assert(friends.nearestFriend()->id == FriendId::RAHUL);

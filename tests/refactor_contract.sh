@@ -5,10 +5,12 @@ test -f firmware/so_long/UWBManager.h
 test -f firmware/so_long/UWBManager.cpp
 test -f firmware/so_long/RangingEngine.h
 test -f firmware/so_long/RangingEngine.cpp
+test -f firmware/so_long/RangingSchedule.h
+test -f firmware/so_long/Debug.h
 
 rg "class UWBManager" firmware/so_long/UWBManager.h >/dev/null
 rg "bool begin\\(\\)" firmware/so_long/UWBManager.h >/dev/null
-rg "transmitAndExpectResponse" firmware/so_long/UWBManager.h >/dev/null
+rg "int transmitAndExpectResponse" firmware/so_long/UWBManager.h >/dev/null
 rg "transmitDelayed" firmware/so_long/UWBManager.h >/dev/null
 rg "enableReceive" firmware/so_long/UWBManager.h >/dev/null
 rg "readStatus\\(\\) const" firmware/so_long/UWBManager.h >/dev/null
@@ -24,7 +26,16 @@ rg "txAntennaDelay\\(\\) const" firmware/so_long/UWBManager.h >/dev/null
 rg "static dwt_config_t config" firmware/so_long/UWBManager.cpp >/dev/null
 rg "dwt_setrxaftertxdelay\\(POLL_TX_TO_RESP_RX_DLY_UUS\\)" firmware/so_long/UWBManager.cpp >/dev/null
 rg "dwt_setrxtimeout\\(RESP_RX_TIMEOUT_UUS\\)" firmware/so_long/UWBManager.cpp >/dev/null
+rg "dwt_forcetrxoff\\(\\)" firmware/so_long/UWBManager.cpp >/dev/null
 rg "dwt_writetxdata" firmware/so_long/UWBManager.cpp >/dev/null
+rg "const int result = dwt_starttx" firmware/so_long/UWBManager.cpp >/dev/null
+rg "return result" firmware/so_long/UWBManager.cpp >/dev/null
+rg "SO_LONG_UWB_DEBUG" firmware/so_long/Debug.h firmware/so_long/UWBManager.cpp firmware/so_long/RangingEngine.cpp >/dev/null
+rg "SO_LONG_APP_DEBUG" firmware/so_long/Debug.h >/dev/null
+rg "#include \"Debug.h\"" firmware/so_long/so_long.ino >/dev/null
+if rg "accepted observation|selected active friend|FastLED\\.show animation|animationNameForState|skipped initiation slot|entered WaitingForResponse|SYS_STATUS_TXFRS observed|RXFCG observed|transmitAndExpectResponse returned" firmware/so_long >/dev/null; then
+  exit 1
+fi
 rg "dwt_rxenable\\(DWT_START_RX_IMMEDIATE\\)" firmware/so_long/UWBManager.cpp >/dev/null
 rg "dwt_setdelayedtrxtime\\(txTime\\)" firmware/so_long/UWBManager.cpp >/dev/null
 rg "get_rx_timestamp_u64" firmware/so_long/UWBManager.cpp >/dev/null
@@ -46,8 +57,12 @@ rg "RangingEngine\\(UWBManager& uwb, NodeId localNodeId, FriendId localFriendId\
 rg "bool update\\(\\)" firmware/so_long/RangingEngine.h >/dev/null
 rg "float latestDistanceMeters\\(\\) const" firmware/so_long/RangingEngine.h >/dev/null
 rg "PresenceObservation latestObservation\\(\\) const" firmware/so_long/RangingEngine.h >/dev/null
+rg "isInitiationSlotForNode" firmware/so_long/RangingSchedule.h >/dev/null
+rg "missedInitiationSkipSlots" firmware/so_long/RangingSchedule.h >/dev/null
+rg "RANGING_SLOT_MS = 100" firmware/so_long/RangingSchedule.h >/dev/null
 
 rg "#include \"UWBManager.h\"" firmware/so_long/RangingEngine.h >/dev/null
+rg "#include \"RangingSchedule.h\"" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "#include \"\\.\\./protocol/Protocol.h\"" firmware/so_long/RangingEngine.cpp >/dev/null
 if rg "#include \"Identity.h\"" firmware/so_long/RangingEngine.cpp >/dev/null; then
   exit 1
@@ -65,6 +80,9 @@ rg "UUS_TO_DWT_TIME" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "setDelayedTransmitTime" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "Protocol::serialize" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "Protocol::deserialize" firmware/so_long/RangingEngine.cpp >/dev/null
+rg "isInitiationSlotForNode\\(localNodeId_, nowMs\\)" firmware/so_long/RangingEngine.cpp >/dev/null
+rg "slotsToSkip_" firmware/so_long/RangingEngine.h firmware/so_long/RangingEngine.cpp >/dev/null
+rg "missedInitiationSkipSlots\\(localNodeId_\\)" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "0\\.7 \\* filteredDistanceMeters_ \\+ 0\\.3 \\* distance" firmware/so_long/RangingEngine.cpp >/dev/null
 
 rg "#include \"UWBManager.h\"" firmware/so_long/so_long.ino >/dev/null

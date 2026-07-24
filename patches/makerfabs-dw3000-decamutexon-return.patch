@@ -1,0 +1,11 @@
+diff --git a/src/dw3000_mutex.cpp b/src/dw3000_mutex.cpp
+--- a/src/dw3000_mutex.cpp
++++ b/src/dw3000_mutex.cpp
+@@ -52,6 +52,7 @@ portMUX_TYPE my_mutex = portMUX_INITIALIZER_UNLOCKED;
+ decaIrqStatus_t decamutexon(void)
+ {
+     portENTER_CRITICAL(&my_mutex);
++    return 0;
+     /*portDISABLE_INTERRUPTS();
+     decaIrqStatus_t s = port_GetEXT_IRQStatus();
+ 

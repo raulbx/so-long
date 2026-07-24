@@ -1,11 +1,12 @@
 #include "RangingEngine.h"
 
 #include "../protocol/Protocol.h"
+#include "Debug.h"
+#include "RangingSchedule.h"
 #include "dw3000.h"
 
 #include <string.h>
 
-#define RNG_DELAY_MS 100
 #define ALL_MSG_COMMON_LEN 10
 #define ALL_MSG_SN_IDX 2
 #define RESP_MSG_POLL_RX_TS_IDX 10
@@ -70,7 +71,15 @@ bool RangingEngine::updateListening(uint32_t nowMs) {
     listeningEnabled_ = false;
   }
 
-  if (nowMs - lastRangeAttemptMs_ >= RNG_DELAY_MS) {
+  const uint32_t currentSlot = rangingSlotForTime(nowMs);
+  if (isInitiationSlotForNode(localNodeId_, nowMs) &&
+      currentSlot != lastInitiatedSlot_) {
+    lastInitiatedSlot_ = currentSlot;
+    if (slotsToSkip_ > 0) {
+      slotsToSkip_--;
+      return false;
+    }
+
     state_ = RangingState::Initiating;
     return updateInitiating(nowMs);
   }
@@ -109,6 +118,10 @@ bool RangingEngine::updateWaitingForResponse() {
   }
 
   if (uwb_.hasReceiveTimeoutOrError(status)) {
+#if SO_LONG_UWB_DEBUG
+    Serial.print("RangingEngine: RX timeout/error status=0x");
+    Serial.println(status, HEX);
+#endif
     /* Increment frame sequence number after transmission of the poll message (modulo 256). */
     frameSeq_++;
     /* Clear RX error/timeout events in the DW IC status register. */
@@ -116,6 +129,7 @@ bool RangingEngine::updateWaitingForResponse() {
     // Serial.print("RX timeout/error. Status = 0x");
     // Serial.println(status_reg, HEX);
     uwb_.clearReceiveTimeoutOrError();
+    slotsToSkip_ = missedInitiationSkipSlots(localNodeId_);
     returnToListening();
   }
 

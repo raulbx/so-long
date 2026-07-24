@@ -12,12 +12,12 @@ struct FriendInfo {
 };
 
 static const FriendInfo FRIENDS[] = {
-    {FriendId::RAHUL, "Rahul", CRGB(0, 180, 255)},
-    {FriendId::JENNIFER, "Jennifer", CRGB::Red},
-    {FriendId::MIKE, "Mike", CRGB(255, 120, 0)},
-    {FriendId::MAGGIE, "Maggie", CRGB(120, 255, 80)},
-    {FriendId::JAMES, "James", CRGB(160, 80, 255)},
-    {FriendId::MAX, "Max", CRGB(255, 230, 80)},
+  { FriendId::RAHUL, "Rahul", CRGB::Blue },
+  { FriendId::JENNIFER, "Jennifer", CRGB::Red },
+  { FriendId::MIKE, "Mike", CRGB::Orange },
+  { FriendId::MAGGIE, "Maggie", CRGB::Green },
+  { FriendId::JAMES, "James", CRGB::Purple },
+  { FriendId::MAX, "Max", CRGB::Yellow },
 };
 
 static const size_t FRIEND_COUNT = sizeof(FRIENDS) / sizeof(FRIENDS[0]);

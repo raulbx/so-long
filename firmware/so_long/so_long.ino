@@ -3,6 +3,7 @@
 
 #include "AnimationEngine.h"
 #include "Config.h"
+#include "Debug.h"
 #include "FriendManager.h"
 #include "Friends.h"
 #include "Identity.h"

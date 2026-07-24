@@ -10,7 +10,7 @@ enum class UWBReceiveStatus : uint8_t {
 class UWBManager {
  public:
   bool begin();
-  void transmitAndExpectResponse(uint8_t* data, uint16_t length);
+  int transmitAndExpectResponse(uint8_t* data, uint16_t length);
   bool transmitDelayed(uint8_t* data, uint16_t length);
   bool enableReceive();
   uint32_t readStatus() const;
