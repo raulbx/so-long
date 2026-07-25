@@ -28,6 +28,7 @@ class AnimationEngine {
   uint16_t cometPosition_;
 
   void renderOwnerBreathBackground();
+  void renderApproachingComet();
   void renderCuriousAcknowledgement();
   void renderReunitedCelebration();
   void renderDepartingFade();

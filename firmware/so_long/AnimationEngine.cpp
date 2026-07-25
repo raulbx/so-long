@@ -48,6 +48,9 @@ void AnimationEngine::update() {
     case Emotion::PRESENT:
       renderComet();
       break;
+    case Emotion::APPROACHING:
+      renderApproachingComet();
+      break;
     case Emotion::CURIOUS:
       renderCuriousAcknowledgement();
       break;
@@ -84,6 +87,10 @@ void AnimationEngine::renderOwnerBreathBackground() {
   base.nscale8_video(breath);
 
   fill_solid(leds_, ledCount_, base);
+}
+
+void AnimationEngine::renderApproachingComet() {
+  renderComet();
 }
 
 void AnimationEngine::renderCuriousAcknowledgement() {

@@ -83,6 +83,7 @@ Emotion identifies the heart’s current emotional mode.
 enum class Emotion {
     IDLE,
     PRESENT,
+    APPROACHING,
     CURIOUS,
     REUNITED,
     DEPARTING
@@ -92,11 +93,13 @@ The emotional modes represent interpretation over time:
 
 * IDLE — no friend is currently present
 * PRESENT — a friend is present and no temporary emotional effect is active
+* APPROACHING — a visible friend is meaningfully moving closer
 * CURIOUS — a friend has newly appeared
 * REUNITED — a friend has reached the close-range threshold
 * DEPARTING — a previously visible friend has disappeared
 
-APPROACHING is intentionally deferred until distance-trend behavior is designed.
+APPROACHING is a temporal interpretation. It is based on short-term distance
+history rather than a single raw measurement.
 
 # EmotionalState
 
@@ -274,6 +277,7 @@ Responsibilities:
 * detect friend arrival
 * detect friend disappearance
 * detect friend visibility timeout transitions
+* detect meaningful inward movement
 * detect close-range reunion
 * maintain emotional state over time
 * determine state transitions
@@ -286,9 +290,19 @@ Representative internal state may include:
 Emotion currentEmotion_;
 bool previouslyPresent_;
 bool reunionArmed_;
+float approachBaselineDistanceM_;
 uint32_t stateEnteredAtMs_;
+uint32_t approachBaselineAtMs_;
 ```
 The implementation may use additional history or smoothing where needed.
+
+Approach detection must be resistant to noisy UWB readings. It should use a
+named observation window, an entry threshold, and a smaller exit threshold or
+equivalent hysteresis. Trend history must reset when the selected friend
+changes, disappears, or reappears.
+
+REUNITED takes precedence over APPROACHING when the close-range threshold is
+crossed.
 
 EmotionalStateEngine must not:
 
@@ -356,6 +370,14 @@ IDLE                           CURIOUS
 │                                │ observation persists
 │ friend absent                  ▼
 DEPARTING ◄──── friend lost ───── PRESENT
+                                 │
+                                 │ meaningful inward movement
+                                 ▼
+                           APPROACHING
+                                 │
+                                 │ stable or reversing distance
+                                 ▼
+                              PRESENT
                                  │
                                  │ close threshold crossed
                                  ▼

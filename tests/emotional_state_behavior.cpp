@@ -42,7 +42,25 @@ EmotionalState normalPresentStateForDistance(float distanceM) {
   return engine.currentState();
 }
 
+void enterPresent(EmotionalStateEngine& engine, FriendId friendId,
+                  float distanceM, uint32_t startMs) {
+  FriendObservation observation = friendObservation(friendId, distanceM);
+  engine.update(&observation, SoLongColors::Red, startMs);
+  engine.update(&observation, SoLongColors::Red,
+                startMs + SoLongConfig::CURIOUS_DURATION_MS + 1);
+  assert(engine.currentState().emotion == Emotion::PRESENT);
+}
+
+void updateDistance(EmotionalStateEngine& engine, FriendId friendId,
+                    float distanceM, uint32_t nowMs) {
+  FriendObservation observation = friendObservation(friendId, distanceM);
+  engine.update(&observation, SoLongColors::Red, nowMs);
+}
+
 int main() {
+  assert(SoLongConfig::REUNITED_ENTER_DISTANCE_M == 2.0f);
+  assert(SoLongConfig::REUNITED_EXIT_DISTANCE_M == 2.5f);
+
   EmotionalStateEngine engine;
   engine.begin(SoLongColors::Blue);
 
@@ -69,7 +87,7 @@ int main() {
   assert(state.motionIntervalMs == SoLongConfig::COMET_SLOW_MS);
 
   FriendObservation jenniferClose =
-      friendObservation(FriendId::JENNIFER, 0.75f);
+      friendObservation(FriendId::JENNIFER, 1.9f);
   engine.update(&jenniferClose, SoLongColors::Red,
                 100 + SoLongConfig::CURIOUS_DURATION_MS + 2);
   state = engine.currentState();
@@ -159,6 +177,117 @@ int main() {
   assert(farPresent.motionIntervalMs == SoLongConfig::COMET_SLOW_MS);
   assert(nearPresent.motionIntervalMs == SoLongConfig::COMET_MEDIUM_MS);
   assert(closePresent.motionIntervalMs == SoLongConfig::COMET_FAST_MS);
+
+  EmotionalStateEngine stableEngine;
+  stableEngine.begin(SoLongColors::Blue);
+  enterPresent(stableEngine, FriendId::JENNIFER, 4.0f, 0);
+  updateDistance(stableEngine, FriendId::JENNIFER, 4.0f,
+                 SoLongConfig::CURIOUS_DURATION_MS +
+                     SoLongConfig::APPROACHING_WINDOW_MS + 2);
+  assert(stableEngine.currentState().emotion == Emotion::PRESENT);
+
+  EmotionalStateEngine noisyEngine;
+  noisyEngine.begin(SoLongColors::Blue);
+  enterPresent(noisyEngine, FriendId::JENNIFER, 4.0f, 0);
+  updateDistance(noisyEngine, FriendId::JENNIFER, 3.85f,
+                 SoLongConfig::CURIOUS_DURATION_MS +
+                     SoLongConfig::APPROACHING_WINDOW_MS + 2);
+  assert(noisyEngine.currentState().emotion == Emotion::PRESENT);
+
+  EmotionalStateEngine approachingEngine;
+  approachingEngine.begin(SoLongColors::Blue);
+  enterPresent(approachingEngine, FriendId::JENNIFER, 4.0f, 0);
+  const uint32_t firstTrendWindow =
+      SoLongConfig::CURIOUS_DURATION_MS + SoLongConfig::APPROACHING_WINDOW_MS +
+      2;
+  updateDistance(approachingEngine, FriendId::JENNIFER, 3.4f,
+                 firstTrendWindow);
+  assert(approachingEngine.currentState().emotion == Emotion::APPROACHING);
+  assert(approachingEngine.currentState().effectSize >
+         normalPresentStateForDistance(3.4f).effectSize);
+  assert(approachingEngine.currentState().intensity >
+         normalPresentStateForDistance(3.4f).intensity);
+  assert(approachingEngine.currentState().motionIntervalMs <
+         normalPresentStateForDistance(3.4f).motionIntervalMs);
+
+  updateDistance(approachingEngine, FriendId::JENNIFER, 2.9f,
+                 firstTrendWindow + SoLongConfig::APPROACHING_WINDOW_MS + 1);
+  assert(approachingEngine.currentState().emotion == Emotion::APPROACHING);
+
+  updateDistance(approachingEngine, FriendId::JENNIFER, 2.85f,
+                 firstTrendWindow + 2 * SoLongConfig::APPROACHING_WINDOW_MS +
+                     2);
+  assert(approachingEngine.currentState().emotion == Emotion::PRESENT);
+
+  EmotionalStateEngine reversingEngine;
+  reversingEngine.begin(SoLongColors::Blue);
+  enterPresent(reversingEngine, FriendId::JENNIFER, 4.0f, 0);
+  updateDistance(reversingEngine, FriendId::JENNIFER, 3.4f,
+                 firstTrendWindow);
+  assert(reversingEngine.currentState().emotion == Emotion::APPROACHING);
+  updateDistance(reversingEngine, FriendId::JENNIFER, 3.7f,
+                 firstTrendWindow + SoLongConfig::APPROACHING_WINDOW_MS + 1);
+  assert(reversingEngine.currentState().emotion == Emotion::PRESENT);
+
+  EmotionalStateEngine thresholdEngine;
+  thresholdEngine.begin(SoLongColors::Blue);
+  enterPresent(thresholdEngine, FriendId::JENNIFER, 4.0f, 0);
+  updateDistance(thresholdEngine, FriendId::JENNIFER, 1.99f,
+                 SoLongConfig::CURIOUS_DURATION_MS + 2);
+  assert(thresholdEngine.currentState().emotion == Emotion::REUNITED);
+  thresholdEngine.update(&jenniferClose, SoLongColors::Red,
+                         SoLongConfig::CURIOUS_DURATION_MS +
+                             SoLongConfig::REUNITED_DURATION_MS + 3);
+  assert(thresholdEngine.currentState().emotion == Emotion::PRESENT);
+  updateDistance(thresholdEngine, FriendId::JENNIFER, 1.8f,
+                 SoLongConfig::CURIOUS_DURATION_MS +
+                     SoLongConfig::REUNITED_DURATION_MS + 4);
+  assert(thresholdEngine.currentState().emotion == Emotion::PRESENT);
+  updateDistance(thresholdEngine, FriendId::JENNIFER, 2.6f,
+                 SoLongConfig::CURIOUS_DURATION_MS +
+                     SoLongConfig::REUNITED_DURATION_MS + 5);
+  assert(thresholdEngine.currentState().emotion == Emotion::PRESENT);
+  updateDistance(thresholdEngine, FriendId::JENNIFER, 1.9f,
+                 SoLongConfig::CURIOUS_DURATION_MS +
+                     SoLongConfig::REUNITED_DURATION_MS + 6);
+  assert(thresholdEngine.currentState().emotion == Emotion::REUNITED);
+
+  EmotionalStateEngine lossResetEngine;
+  lossResetEngine.begin(SoLongColors::Blue);
+  enterPresent(lossResetEngine, FriendId::JENNIFER, 4.0f, 0);
+  updateDistance(lossResetEngine, FriendId::JENNIFER, 3.4f,
+                 firstTrendWindow);
+  assert(lossResetEngine.currentState().emotion == Emotion::APPROACHING);
+  lossResetEngine.update(nullptr, SoLongColors::Black, firstTrendWindow + 1);
+  assert(lossResetEngine.currentState().emotion == Emotion::DEPARTING);
+  lossResetEngine.update(
+      nullptr, SoLongColors::Black,
+      firstTrendWindow + SoLongConfig::DEPARTING_DURATION_MS + 2);
+  assert(lossResetEngine.currentState().emotion == Emotion::IDLE);
+  enterPresent(lossResetEngine, FriendId::JENNIFER, 3.4f,
+               firstTrendWindow + SoLongConfig::DEPARTING_DURATION_MS + 3);
+  updateDistance(lossResetEngine, FriendId::JENNIFER, 3.4f,
+                 firstTrendWindow + SoLongConfig::DEPARTING_DURATION_MS +
+                     SoLongConfig::CURIOUS_DURATION_MS +
+                     SoLongConfig::APPROACHING_WINDOW_MS + 5);
+  assert(lossResetEngine.currentState().emotion == Emotion::PRESENT);
+
+  EmotionalStateEngine changedFriendEngine;
+  changedFriendEngine.begin(SoLongColors::Blue);
+  enterPresent(changedFriendEngine, FriendId::JENNIFER, 4.0f, 0);
+  updateDistance(changedFriendEngine, FriendId::JENNIFER, 3.4f,
+                 firstTrendWindow);
+  assert(changedFriendEngine.currentState().emotion == Emotion::APPROACHING);
+  updateDistance(changedFriendEngine, FriendId::MIKE, 3.2f,
+                 firstTrendWindow + 1);
+  assert(changedFriendEngine.currentState().emotion == Emotion::CURIOUS);
+  updateDistance(changedFriendEngine, FriendId::MIKE, 3.2f,
+                 firstTrendWindow + SoLongConfig::CURIOUS_DURATION_MS + 2);
+  assert(changedFriendEngine.currentState().emotion == Emotion::PRESENT);
+  updateDistance(changedFriendEngine, FriendId::MIKE, 3.2f,
+                 firstTrendWindow + SoLongConfig::CURIOUS_DURATION_MS +
+                     SoLongConfig::APPROACHING_WINDOW_MS + 3);
+  assert(changedFriendEngine.currentState().emotion == Emotion::PRESENT);
 
   return 0;
 }

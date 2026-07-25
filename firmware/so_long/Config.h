@@ -26,8 +26,12 @@ constexpr uint32_t CURIOUS_DURATION_MS = 900;
 constexpr uint32_t REUNITED_DURATION_MS = 1200;
 constexpr uint32_t DEPARTING_DURATION_MS = 1000;
 
-constexpr float REUNITED_ENTER_DISTANCE_M = 1.0f;
-constexpr float REUNITED_EXIT_DISTANCE_M = 1.25f;
+constexpr float REUNITED_ENTER_DISTANCE_M = 2.0f;
+constexpr float REUNITED_EXIT_DISTANCE_M = 2.5f;
+
+constexpr uint32_t APPROACHING_WINDOW_MS = 1500;
+constexpr float APPROACHING_ENTER_DELTA_M = 0.5f;
+constexpr float APPROACHING_EXIT_DELTA_M = 0.2f;
 
 constexpr uint8_t COMET_FAR_LENGTH = 3;
 constexpr uint8_t COMET_NEAR_LENGTH = 6;
@@ -42,5 +46,8 @@ constexpr uint8_t CURIOUS_INTENSITY = 96;
 constexpr uint8_t REUNITED_EFFECT_SIZE = 12;
 constexpr uint8_t REUNITED_INTENSITY = 255;
 constexpr uint8_t DEPARTING_EFFECT_SIZE = 6;
+constexpr uint8_t APPROACHING_EFFECT_SIZE_BOOST = 2;
+constexpr uint8_t APPROACHING_INTENSITY_BOOST = 32;
+constexpr uint16_t APPROACHING_MOTION_INTERVAL_REDUCTION_MS = 15;
 
 }  // namespace SoLongConfig

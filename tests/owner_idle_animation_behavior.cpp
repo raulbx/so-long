@@ -138,5 +138,40 @@ int main() {
     assert(closeLeds[i].b > 0);
   }
 
+  CRGB presentNearLeds[12];
+  AnimationEngine presentNearAnimation(presentNearLeds, 12);
+  presentNearAnimation.begin();
+  presentNearAnimation.setEmotionalState(state(
+      Emotion::PRESENT, SoLongColors::Blue, true, SoLongColors::Red,
+      SoLongConfig::COMET_NEAR_INTENSITY, SoLongConfig::COMET_NEAR_LENGTH,
+      SoLongConfig::COMET_MEDIUM_MS));
+
+  fake_millis += SoLongConfig::ANIMATION_FRAME_MS;
+  presentNearAnimation.update();
+
+  CRGB approachingLeds[12];
+  AnimationEngine approachingAnimation(approachingLeds, 12);
+  approachingAnimation.begin();
+  approachingAnimation.setEmotionalState(state(
+      Emotion::APPROACHING, SoLongColors::Blue, true, SoLongColors::Red,
+      SoLongConfig::COMET_NEAR_INTENSITY +
+          SoLongConfig::APPROACHING_INTENSITY_BOOST,
+      SoLongConfig::COMET_NEAR_LENGTH +
+          SoLongConfig::APPROACHING_EFFECT_SIZE_BOOST,
+      SoLongConfig::COMET_MEDIUM_MS -
+          SoLongConfig::APPROACHING_MOTION_INTERVAL_REDUCTION_MS));
+
+  fake_millis += SoLongConfig::ANIMATION_FRAME_MS;
+  approachingAnimation.update();
+
+  assert(countRedOverlayPixels(approachingLeds, 12) >
+         countRedOverlayPixels(presentNearLeds, 12));
+  assert(brightestRedPixel(approachingLeds, 12) >
+         brightestRedPixel(presentNearLeds, 12));
+
+  for (uint8_t i = 0; i < 12; i++) {
+    assert(approachingLeds[i].b > 0);
+  }
+
   return 0;
 }

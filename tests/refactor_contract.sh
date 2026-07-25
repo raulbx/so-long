@@ -102,8 +102,23 @@ rg "updateEmotionalState\\(friendManager\\.nearestFriend\\(\\), nowMs\\)" firmwa
 rg "emotionalState\\.update\\(" firmware/so_long/so_long.ino >/dev/null
 rg "animation\\.setEmotionalState\\(emotionalState\\.currentState\\(\\)\\)" firmware/so_long/so_long.ino >/dev/null
 
+rg "APPROACHING" firmware/so_long/Emotion.h >/dev/null
+rg "REUNITED_ENTER_DISTANCE_M = 2\\.0f" firmware/so_long/Config.h >/dev/null
+rg "REUNITED_EXIT_DISTANCE_M = 2\\.5f" firmware/so_long/Config.h >/dev/null
+rg "APPROACHING_WINDOW_MS = 1500" firmware/so_long/Config.h >/dev/null
+rg "APPROACHING_ENTER_DELTA_M = 0\\.5f" firmware/so_long/Config.h >/dev/null
+rg "APPROACHING_EXIT_DELTA_M = 0\\.2f" firmware/so_long/Config.h >/dev/null
+rg "APPROACHING_EFFECT_SIZE_BOOST" firmware/so_long/Config.h >/dev/null
+rg "APPROACHING_INTENSITY_BOOST" firmware/so_long/Config.h >/dev/null
+rg "APPROACHING_MOTION_INTERVAL_REDUCTION_MS" firmware/so_long/Config.h >/dev/null
+rg "approachBaselineDistanceM_" firmware/so_long/EmotionalStateEngine.h firmware/so_long/EmotionalStateEngine.cpp >/dev/null
+rg "approachBaselineAtMs_" firmware/so_long/EmotionalStateEngine.h firmware/so_long/EmotionalStateEngine.cpp >/dev/null
+rg "resetApproachTrend" firmware/so_long/EmotionalStateEngine.h firmware/so_long/EmotionalStateEngine.cpp >/dev/null
+rg "updateApproachTrend" firmware/so_long/EmotionalStateEngine.h firmware/so_long/EmotionalStateEngine.cpp >/dev/null
+
 rg "setEmotionalState\\(EmotionalState state\\)" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null
 rg "renderOwnerBreathBackground" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null
+rg "renderApproachingComet" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null
 rg "toCrgb\\(Color color\\)" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null
 if rg "FriendId|Identity|FriendInfo|FRIENDS|MY_FRIEND" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null; then
   exit 1
@@ -124,6 +139,10 @@ if rg "FastLED|CRGB|DW3000|dw3000|UWBManager|RangingEngine" firmware/so_long/Emo
 fi
 
 if rg "FastLED|CRGB" firmware/so_long/Friends.h >/dev/null; then
+  exit 1
+fi
+
+if rg "VisualState" firmware/so_long >/dev/null; then
   exit 1
 fi
 
