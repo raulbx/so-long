@@ -1,7 +1,10 @@
 #include <assert.h>
 
 #include "AnimationEngine.h"
+#include "DomainColor.h"
 #include "Config.h"
+#include "Emotion.h"
+#include "EmotionalState.h"
 #include "Identity.h"
 #include "OwnerIdentity.h"
 
@@ -13,6 +16,17 @@ bool channelPatternMatches(CRGB rendered, CRGB source) {
   return (source.r == 0 ? rendered.r == 0 : rendered.r > 0) &&
          (source.g == 0 ? rendered.g == 0 : rendered.g > 0) &&
          (source.b == 0 ? rendered.b == 0 : rendered.b > 0);
+}
+
+bool sameColor(Color left, Color right) {
+  return left.red == right.red && left.green == right.green &&
+         left.blue == right.blue;
+}
+
+bool channelPatternMatches(CRGB rendered, Color source) {
+  return (source.red == 0 ? rendered.r == 0 : rendered.r > 0) &&
+         (source.green == 0 ? rendered.g == 0 : rendered.g > 0) &&
+         (source.blue == 0 ? rendered.b == 0 : rendered.b > 0);
 }
 
 uint8_t countRedOverlayPixels(CRGB* leds, uint8_t ledCount) {
@@ -35,6 +49,20 @@ uint8_t brightestRedPixel(CRGB* leds, uint8_t ledCount) {
   return brightest;
 }
 
+EmotionalState state(Emotion emotion, Color ownerColor, bool friendPresent,
+                     Color friendColor, uint8_t intensity, uint8_t effectSize,
+                     uint16_t motionIntervalMs) {
+  return {
+      emotion,
+      ownerColor,
+      friendPresent,
+      friendColor,
+      intensity,
+      effectSize,
+      motionIntervalMs,
+  };
+}
+
 int main() {
   const FriendInfo* owner = localOwnerInfo();
   assert(owner != nullptr);
@@ -42,10 +70,10 @@ int main() {
 
 #if SO_LONG_BOARD_ID == 1
   assert(MY_FRIEND == FriendId::RAHUL);
-  assert(sameColor(owner->color, CRGB::Blue));
+  assert(sameColor(owner->color, SoLongColors::Blue));
 #elif SO_LONG_BOARD_ID == 2
   assert(MY_FRIEND == FriendId::JENNIFER);
-  assert(sameColor(owner->color, CRGB::Red));
+  assert(sameColor(owner->color, SoLongColors::Red));
 #else
 #error Unsupported SO_LONG_BOARD_ID in owner idle animation test.
 #endif
@@ -54,12 +82,13 @@ int main() {
   AnimationEngine animation(leds, 4);
   animation.begin();
 
-  const CRGB staleFriendColor =
-      MY_FRIEND == FriendId::RAHUL ? CRGB::Red : CRGB::Blue;
-  animation.setFriendColor(staleFriendColor);
-  animation.setFriendDistanceMeters(0.75f);
-  animation.setOwnerColor(owner->color);
-  animation.setHeartState(HeartState::AMBIENT);
+  const Color staleFriendColor =
+      MY_FRIEND == FriendId::RAHUL ? SoLongColors::Red : SoLongColors::Blue;
+  animation.setEmotionalState(state(Emotion::IDLE, owner->color, false,
+                                    staleFriendColor,
+                                    SoLongConfig::COMET_CLOSE_INTENSITY,
+                                    SoLongConfig::COMET_CLOSE_LENGTH,
+                                    SoLongConfig::COMET_FAST_MS));
 
   fake_millis = SoLongConfig::ANIMATION_FRAME_MS;
   animation.update();
@@ -73,10 +102,10 @@ int main() {
   CRGB overlayLeds[12];
   AnimationEngine overlayAnimation(overlayLeds, 12);
   overlayAnimation.begin();
-  overlayAnimation.setOwnerColor(CRGB::Blue);
-  overlayAnimation.setFriendColor(CRGB::Red);
-  overlayAnimation.setFriendDistanceMeters(4.0f);
-  overlayAnimation.setHeartState(HeartState::FRIEND_DETECTED);
+  overlayAnimation.setEmotionalState(state(
+      Emotion::PRESENT, SoLongColors::Blue, true, SoLongColors::Red,
+      SoLongConfig::COMET_FAR_INTENSITY, SoLongConfig::COMET_FAR_LENGTH,
+      SoLongConfig::COMET_SLOW_MS));
 
   fake_millis += SoLongConfig::ANIMATION_FRAME_MS;
   overlayAnimation.update();
@@ -92,10 +121,10 @@ int main() {
   CRGB closeLeds[12];
   AnimationEngine closeAnimation(closeLeds, 12);
   closeAnimation.begin();
-  closeAnimation.setOwnerColor(CRGB::Blue);
-  closeAnimation.setFriendColor(CRGB::Red);
-  closeAnimation.setFriendDistanceMeters(0.75f);
-  closeAnimation.setHeartState(HeartState::FRIEND_FOUND);
+  closeAnimation.setEmotionalState(state(
+      Emotion::PRESENT, SoLongColors::Blue, true, SoLongColors::Red,
+      SoLongConfig::COMET_CLOSE_INTENSITY, SoLongConfig::COMET_CLOSE_LENGTH,
+      SoLongConfig::COMET_FAST_MS));
 
   fake_millis += SoLongConfig::ANIMATION_FRAME_MS;
   closeAnimation.update();

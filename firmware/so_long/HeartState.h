@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Arduino.h>
+#include <stdint.h>
 
 enum class HeartState : uint8_t {
   AMBIENT,

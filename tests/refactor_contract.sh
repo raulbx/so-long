@@ -8,6 +8,11 @@ test -f firmware/so_long/RangingEngine.cpp
 test -f firmware/so_long/RangingSchedule.h
 test -f firmware/so_long/Debug.h
 test -f firmware/so_long/OwnerIdentity.h
+test -f firmware/so_long/DomainColor.h
+test -f firmware/so_long/Emotion.h
+test -f firmware/so_long/EmotionalState.h
+test -f firmware/so_long/EmotionalStateEngine.h
+test -f firmware/so_long/EmotionalStateEngine.cpp
 
 rg "class UWBManager" firmware/so_long/UWBManager.h >/dev/null
 rg "bool begin\\(\\)" firmware/so_long/UWBManager.h >/dev/null
@@ -92,14 +97,33 @@ rg "RangingEngine ranging\\(uwb, MY_NODE_ID, MY_FRIEND\\)" firmware/so_long/so_l
 rg "uwb.begin\\(\\)" firmware/so_long/so_long.ino >/dev/null
 rg "ranging.update\\(\\)" firmware/so_long/so_long.ino >/dev/null
 rg "ranging.latestObservation\\(\\)" firmware/so_long/so_long.ino >/dev/null
+rg "EmotionalStateEngine emotionalState" firmware/so_long/so_long.ino >/dev/null
+rg "updateEmotionalState\\(friendManager\\.nearestFriend\\(\\), nowMs\\)" firmware/so_long/so_long.ino >/dev/null
+rg "emotionalState\\.update\\(" firmware/so_long/so_long.ino >/dev/null
+rg "animation\\.setEmotionalState\\(emotionalState\\.currentState\\(\\)\\)" firmware/so_long/so_long.ino >/dev/null
 
-rg "setCometSpeedMs" firmware/so_long/AnimationEngine.h >/dev/null
-rg "setOwnerColor" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null
-rg "ownerColor_" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null
+rg "setEmotionalState\\(EmotionalState state\\)" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null
+rg "renderOwnerBreathBackground" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null
+rg "toCrgb\\(Color color\\)" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null
 if rg "FriendId|Identity|FriendInfo|FRIENDS|MY_FRIEND" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null; then
   exit 1
 fi
+if rg "HeartState" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null; then
+  exit 1
+fi
 if rg "delay\\(" firmware/so_long/AnimationEngine.cpp firmware/so_long/AnimationEngine.h >/dev/null; then
+  exit 1
+fi
+
+if rg "Arduino|FastLED|CRGB|DW3000|dw3000|UWBManager|RangingEngine" firmware/so_long/DomainColor.h firmware/so_long/Emotion.h firmware/so_long/EmotionalState.h firmware/so_long/FriendId.h firmware/so_long/NodeId.h firmware/so_long/HeartState.h >/dev/null; then
+  exit 1
+fi
+
+if rg "FastLED|CRGB|DW3000|dw3000|UWBManager|RangingEngine" firmware/so_long/EmotionalStateEngine.h firmware/so_long/EmotionalStateEngine.cpp >/dev/null; then
+  exit 1
+fi
+
+if rg "FastLED|CRGB" firmware/so_long/Friends.h >/dev/null; then
   exit 1
 fi
 

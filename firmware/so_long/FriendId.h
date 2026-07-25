@@ -3,7 +3,7 @@
 #ifndef SO_LONG_FRIEND_ID_H
 #define SO_LONG_FRIEND_ID_H
 
-#include <Arduino.h>
+#include <stdint.h>
 
 // FriendId identifies the person a heart belongs to.
 enum class FriendId : uint8_t {

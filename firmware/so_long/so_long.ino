@@ -4,6 +4,7 @@
 #include "AnimationEngine.h"
 #include "Config.h"
 #include "Debug.h"
+#include "EmotionalStateEngine.h"
 #include "FriendManager.h"
 #include "Friends.h"
 #include "Identity.h"
@@ -13,27 +14,25 @@
 
 CRGB leds[SoLongConfig::LED_COUNT];
 AnimationEngine animation(leds, SoLongConfig::LED_COUNT);
+EmotionalStateEngine emotionalState;
 FriendManager friendManager;
 UWBManager uwb;
 RangingEngine ranging(uwb, MY_NODE_ID, MY_FRIEND);
 
-FriendId activeFriendId = MY_FRIEND;
-
-void applyFriendToAnimation(const FriendObservation* observation,
-                            HeartState heartState) {
+void updateEmotionalState(const FriendObservation* observation,
+                          uint32_t nowMs) {
+  Color friendColor = SoLongColors::Black;
   if (observation == nullptr) {
-    animation.setHeartState(heartState);
-    return;
+    emotionalState.update(nullptr, friendColor, nowMs);
+  } else {
+    const FriendInfo* friendInfo = friendInfoFor(observation->id);
+    if (friendInfo != nullptr) {
+      friendColor = friendInfo->color;
+    }
+    emotionalState.update(observation, friendColor, nowMs);
   }
 
-  activeFriendId = observation->id;
-  const FriendInfo* friendInfo = friendInfoFor(observation->id);
-  if (friendInfo != nullptr) {
-    animation.setFriendColor(friendInfo->color);
-  }
-
-  animation.setHeartState(heartState);
-  animation.setFriendDistanceMeters(observation->distanceM);
+  animation.setEmotionalState(emotionalState.currentState());
 }
 
 void setup() {
@@ -52,9 +51,11 @@ void setup() {
   animation.begin();
   const FriendInfo* ownerInfo = localOwnerInfo();
   if (ownerInfo != nullptr) {
-    animation.setOwnerColor(ownerInfo->color);
+    emotionalState.begin(ownerInfo->color);
+  } else {
+    emotionalState.begin(SoLongColors::DeepSkyBlue);
   }
-  animation.setCometSpeedMs(SoLongConfig::COMET_SLOW_MS);
+  animation.setEmotionalState(emotionalState.currentState());
   friendManager.begin();
   bool ok = uwb.begin();
   Serial.println(ok);
@@ -68,8 +69,7 @@ void loop() {
   }
 
   friendManager.update(nowMs);
-  applyFriendToAnimation(friendManager.nearestFriend(),
-                         friendManager.heartState());
+  updateEmotionalState(friendManager.nearestFriend(), nowMs);
 
   for (int i = 0; i < 4; i++) {
     animation.update();

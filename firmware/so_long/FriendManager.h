@@ -1,9 +1,8 @@
 #pragma once
 
-#include <Arduino.h>
+#include <stdint.h>
 
 #include "FriendId.h"
-#include "HeartState.h"
 #include "PresenceObservation.h"
 
 struct FriendObservation {
@@ -21,7 +20,6 @@ class FriendManager {
 
   bool hasVisibleFriend() const;
   const FriendObservation* nearestFriend() const;
-  HeartState heartState() const;
 
  private:
   static constexpr uint8_t kFriendSlotCount = 6;
@@ -30,5 +28,4 @@ class FriendManager {
   const FriendObservation* nearestFriend_;
 
   int8_t indexFor(FriendId id) const;
-  HeartState heartStateForDistance(float distanceM) const;
 };

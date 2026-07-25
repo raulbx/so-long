@@ -36,6 +36,7 @@ Each layer has a single responsibility and communicates only through well-define
 - Domain objects must not depend on Arduino or DW3000 APIs.
 - Favor immutable value objects where practical.
 - Architecture should optimize for readability over cleverness.
+- Avoid abstractions until they represent a real distinction in the system.
 
 ---
 
@@ -49,19 +50,98 @@ Node
 PresenceObservation
 Presence
 Event
-HeartState
+Emotion
 EmotionalState
+Color
 ```
 
 The domain model contains no knowledge of:
-
-- radio hardware
-- packet layouts
-- DW3000
-- Arduino
-- FastLED
-
+* radio hardware
+* packet layouts
+* DW3000
+* Arduino
+* FastLED
+* LED indexes
+* animation frames
 ---
+# Color
+
+Color is a hardware-independent RGB value.
+```text
+struct Color {
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+};
+```
+Domain objects use Color rather than CRGB.
+Conversion to FastLED types happens inside the animation layer.
+# Emotion
+
+Emotion identifies the heart’s current emotional mode.
+```text
+enum class Emotion {
+    IDLE,
+    PRESENT,
+    CURIOUS,
+    REUNITED,
+    DEPARTING
+};
+```
+The emotional modes represent interpretation over time:
+
+* IDLE — no friend is currently present
+* PRESENT — a friend is present and no temporary emotional effect is active
+* CURIOUS — a friend has newly appeared
+* REUNITED — a friend has reached the close-range threshold
+* DEPARTING — a previously visible friend has disappeared
+
+APPROACHING is intentionally deferred until distance-trend behavior is designed.
+
+# EmotionalState
+
+EmotionalState is the expressive contract between the emotional and animation layers.
+
+It describes what the heart currently feels and the strength of that feeling. It does not describe individual LED positions or frames.
+
+A representative model is:
+```text
+struct EmotionalState {
+    Emotion emotion;
+
+    Color ownerColor;
+
+    bool friendPresent;
+    Color friendColor;
+
+    uint8_t intensity;
+    uint8_t effectSize;
+    uint16_t motionIntervalMs;
+};
+```
+The exact fields may evolve as implementation needs become clearer, but they must remain hardware-independent.
+
+EmotionalState may contain:
+
+* the current emotion
+* owner identity color
+* friend identity color
+* friend presence
+* normalized expressive intensity
+* high-level effect magnitude
+* high-level motion timing
+
+EmotionalState must not contain:
+
+* CRGB
+* LED indexes
+* FastLED objects
+* packet data
+* DW3000 data
+* raw hardware timestamps
+* rendering buffers
+
+A separate VisualState should not be introduced unless a future requirement creates a meaningful distinction between emotional intent and rendering configuration.
 
 # Communication Protocol
 
@@ -80,7 +160,11 @@ Responsibilities:
 - versioning
 - packet validation
 
-The protocol knows nothing about animations or hardware.
+The protocol knows nothing about:
+* emotions
+* animations
+* LED hardware
+* FastLED
 
 ---
 
@@ -89,28 +173,31 @@ The protocol knows nothing about animations or hardware.
 The firmware transforms radio observations into visual expression.
 
 ```text
-                  Hardware
-                     │
-                     ▼
-                UWBManager
-                     │
-                     ▼
-              RangingEngine
-                     │
-                     ▼
-          PresenceObservation
-                     │
-                     ▼
-              FriendManager
-                     │
-                     ▼
-         EmotionalStateEngine
-                     │
-                     ▼
-             AnimationEngine
-                     │
-                     ▼
-                 FastLED
+Hardware
+   │
+   ▼
+UWBManager
+   │
+   ▼
+RangingEngine
+   │
+   ▼
+PresenceObservation
+   │
+   ▼
+FriendManager
+   │
+   ▼
+EmotionalStateEngine
+   │
+   ▼
+EmotionalState
+   │
+   ▼
+AnimationEngine
+   │
+   ▼
+FastLED
 ```
 
 ---
@@ -152,6 +239,7 @@ Responsibilities:
 - generation of PresenceObservation
 
 RangingEngine owns all protocol timing and radio interaction above the hardware layer.
+RangingEngine must not determine emotional state or animation behavior.
 
 ---
 
@@ -161,26 +249,55 @@ Maintains the current understanding of nearby friends.
 
 Responsibilities:
 
-- track observations
-- maintain visibility timeouts
-- maintain nearest friend
-- expose current friend context
+* track observations
+* maintain visibility timeouts
+* retain the latest valid distance
+* maintain the nearest or currently selected friend
+* expose current friend context
 
 FriendManager contains no animation logic.
+FriendManager should expose objective information such as:
 
+* whether a friend is visible
+* friend identity
+* latest distance
+* observation age
 ---
 
 ## EmotionalStateEngine
 
-Transforms observations into emotional state.
+Transforms objective friend context into expressive intent.
 
 Responsibilities:
 
-- interpret friend context
-- detect approaching / departing
-- detect reunions
-- detect separation
-- determine the current EmotionalState
+* interpret current and previous friend context
+* detect friend arrival
+* detect friend disappearance
+* detect friend visibility timeout transitions
+* detect close-range reunion
+* maintain emotional state over time
+* determine state transitions
+* produce the current EmotionalState
+
+This engine owns temporal interpretation.
+
+Representative internal state may include:
+```text
+Emotion currentEmotion_;
+bool previouslyPresent_;
+bool reunionArmed_;
+uint32_t stateEnteredAtMs_;
+```
+The implementation may use additional history or smoothing where needed.
+
+EmotionalStateEngine must not:
+
+* access DW3000 APIs
+* inspect radio packets
+* write LED frames
+* use FastLED types
+* select individual LED positions
+* contain comet-rendering logic
 
 This is the boundary between objective observations and subjective experience.
 
@@ -188,17 +305,35 @@ This is the boundary between objective observations and subjective experience.
 
 ## AnimationEngine
 
-Transforms emotional state into light.
+Transforms EmotionalState into LED frames.
 
 Responsibilities:
 
-- animation selection
-- animation timing
-- color palettes
-- brightness
-- transitions
+* render the owner-color base layer
+* render friend-color overlays
+* select the animation associated with each emotion
+* calculate LED positions
+* calculate frame-level timing
+* render comets, fades, pulses, and celebrations
+* manage transitions between rendered frames
+* convert domain Color values to FastLED CRGB
+* send completed frames to FastLED
 
-AnimationEngine should never inspect radio packets or ranging data directly.
+AnimationEngine may interpret high-level expressive values such as:
+
+* emotion
+* intensity
+* effect size
+* motion interval
+
+AnimationEngine must not:
+
+* inspect radio packets
+* inspect PresenceObservation
+* inspect FriendId
+* calculate friend visibility
+* decide whether a reunion occurred
+* maintain friend visibility timeouts
 
 ---
 
@@ -206,8 +341,39 @@ AnimationEngine should never inspect radio packets or ranging data directly.
 
 Drives the LEDs.
 
-No application logic belongs here.
+No domain, ranging, emotional, or application logic belongs here.
 
+# State Transitions
+Emotional transitions are based on observations over time rather than a single measurement.
+
+A representative state flow is:
+```text
+friend appears
+┌────────────────────────────────┐
+│                                ▼
+IDLE                           CURIOUS
+▲                                │
+│                                │ observation persists
+│ friend absent                  ▼
+DEPARTING ◄──── friend lost ───── PRESENT
+                                 │
+                                 │ close threshold crossed
+                                 ▼
+                              REUNITED
+                                 │
+                                 │ celebration expires
+                                 ▼
+                              PRESENT
+```
+The exact transition graph may evolve through hardware testing.
+
+Transitions should be:
+
+* deterministic
+* testable
+* resistant to noisy distance measurements
+* controlled by named thresholds and durations
+* independent of frame rendering
 ---
 
 # Architectural Boundary
@@ -226,9 +392,11 @@ PresenceObservation
 FriendManager
 ```
 
-Everything below it is expressive.
+Everything at and below EmotionalStateEngine is expressive.
 
 ```text
+Emotional interpretation
+↓
 EmotionalState
 ↓
 Animation
@@ -239,7 +407,8 @@ Human experience
 ```
 
 This boundary is intentional.
-
+The animation engine does not decide what an observation means.
+The emotional engine does not decide where an LED should be illuminated.
 The heart does not display measurements.
 
 **The heart experiences the world.**
