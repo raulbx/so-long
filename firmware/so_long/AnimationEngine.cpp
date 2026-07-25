@@ -5,7 +5,9 @@
 AnimationEngine::AnimationEngine(CRGB* leds, uint16_t ledCount)
     : leds_(leds),
       ledCount_(ledCount),
+      ownerColor_(CRGB::DeepSkyBlue),
       friendColor_(CRGB::DeepSkyBlue),
+      friendDistanceMeters_(4.0f),
       heartState_(HeartState::AMBIENT),
       lastFrameMs_(0),
       lastCometStepMs_(0),
@@ -18,8 +20,17 @@ void AnimationEngine::begin() {
   FastLED.clear(true);
 }
 
+void AnimationEngine::setOwnerColor(CRGB color) {
+  ownerColor_ = color;
+}
+
 void AnimationEngine::setFriendColor(CRGB color) {
   friendColor_ = color;
+}
+
+void AnimationEngine::setFriendDistanceMeters(float distanceMeters) {
+  friendDistanceMeters_ = distanceMeters;
+  setCometSpeedMs(cometSpeedForDistance(distanceMeters));
 }
 
 void AnimationEngine::setHeartState(HeartState state) {
@@ -49,10 +60,8 @@ void AnimationEngine::update() {
       break;
     case HeartState::FRIEND_DETECTED:
     case HeartState::FRIEND_NEAR:
-      renderComet();
-      break;
     case HeartState::FRIEND_FOUND:
-      renderFoundSparkle();
+      renderComet();
       break;
   }
 
@@ -61,26 +70,30 @@ void AnimationEngine::update() {
 
 void AnimationEngine::renderComet() {
   const uint32_t now = millis();
+  renderOwnerBreathBackground();
+
+  const uint8_t requestedLength = cometLengthForDistance(friendDistanceMeters_);
+  const uint16_t cometLength =
+      requestedLength < ledCount_ ? requestedLength : ledCount_;
+  const uint8_t cometBrightness =
+      cometBrightnessForDistance(friendDistanceMeters_);
+
+  for (uint16_t segment = 0; segment < cometLength; segment++) {
+    const uint16_t index = (cometPosition_ + ledCount_ - segment) % ledCount_;
+    const uint8_t segmentBrightness = static_cast<uint8_t>(
+        (static_cast<uint16_t>(cometBrightness) * (cometLength - segment)) /
+        cometLength);
+
+    CRGB overlay = friendColor_;
+    overlay.nscale8_video(segmentBrightness);
+    leds_[index] += overlay;
+  }
+
   if (now - lastCometStepMs_ < cometSpeedMs_) {
     return;
   }
+
   lastCometStepMs_ = now;
-
-  fadeToBlackBy(leds_, ledCount_, 20);
-
-  leds_[cometPosition_] = friendColor_;
-
-  if (cometPosition_ > 0) {
-    CRGB tail = friendColor_;
-    tail.fadeToBlackBy(80);
-    leds_[cometPosition_ - 1] += tail;
-  }
-
-  if (cometPosition_ > 1) {
-    CRGB tail = friendColor_;
-    tail.fadeToBlackBy(160);
-    leds_[cometPosition_ - 2] += tail;
-  }
 
   cometPosition_++;
   if (cometPosition_ >= ledCount_) {
@@ -89,13 +102,15 @@ void AnimationEngine::renderComet() {
 }
 
 void AnimationEngine::renderAmbientBreath() {
-  const uint8_t breath = beatsin8(10, 12, 90);
-  const CRGB base = CRGB(8, 18, 28);
+  renderOwnerBreathBackground();
+}
+
+void AnimationEngine::renderOwnerBreathBackground() {
+  const uint8_t breath = beatsin8(6, 18, 96);
+  CRGB base = ownerColor_;
+  base.nscale8_video(breath);
 
   fill_solid(leds_, ledCount_, base);
-  for (uint16_t i = 0; i < ledCount_; i++) {
-    leds_[i].nscale8_video(breath);
-  }
 }
 
 void AnimationEngine::renderFoundSparkle() {
@@ -106,4 +121,41 @@ void AnimationEngine::renderFoundSparkle() {
     const uint16_t index = random16(ledCount_);
     leds_[index] += friendColor_;
   }
+}
+
+uint8_t AnimationEngine::cometLengthForDistance(float distanceMeters) const {
+  if (distanceMeters < 1.0f) {
+    return 10;
+  }
+
+  if (distanceMeters < 3.0f) {
+    return 6;
+  }
+
+  return 3;
+}
+
+uint8_t AnimationEngine::cometBrightnessForDistance(
+    float distanceMeters) const {
+  if (distanceMeters < 1.0f) {
+    return 240;
+  }
+
+  if (distanceMeters < 3.0f) {
+    return 180;
+  }
+
+  return 110;
+}
+
+uint16_t AnimationEngine::cometSpeedForDistance(float distanceMeters) const {
+  if (distanceMeters < 1.0f) {
+    return SoLongConfig::COMET_FAST_MS;
+  }
+
+  if (distanceMeters < 3.0f) {
+    return SoLongConfig::COMET_MEDIUM_MS;
+  }
+
+  return SoLongConfig::COMET_SLOW_MS;
 }

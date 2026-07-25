@@ -7,6 +7,7 @@
 #include "FriendManager.h"
 #include "Friends.h"
 #include "Identity.h"
+#include "OwnerIdentity.h"
 #include "RangingEngine.h"
 #include "UWBManager.h"
 
@@ -18,25 +19,6 @@ RangingEngine ranging(uwb, MY_NODE_ID, MY_FRIEND);
 
 FriendId activeFriendId = MY_FRIEND;
 
-const FriendInfo* findFriend(FriendId id) {
-  for (size_t i = 0; i < FRIEND_COUNT; i++) {
-    if (FRIENDS[i].id == id) {
-      return &FRIENDS[i];
-    }
-  }
-  return nullptr;
-}
-
-uint16_t cometSpeedForDistance(float distanceM) {
-  if (distanceM < 1.0f) {
-    return SoLongConfig::COMET_FAST_MS;
-  }
-  if (distanceM < 3.0f) {
-    return SoLongConfig::COMET_MEDIUM_MS;
-  }
-  return SoLongConfig::COMET_SLOW_MS;
-}
-
 void applyFriendToAnimation(const FriendObservation* observation,
                             HeartState heartState) {
   if (observation == nullptr) {
@@ -45,13 +27,13 @@ void applyFriendToAnimation(const FriendObservation* observation,
   }
 
   activeFriendId = observation->id;
-  const FriendInfo* friendInfo = findFriend(observation->id);
+  const FriendInfo* friendInfo = friendInfoFor(observation->id);
   if (friendInfo != nullptr) {
     animation.setFriendColor(friendInfo->color);
   }
 
   animation.setHeartState(heartState);
-  animation.setCometSpeedMs(cometSpeedForDistance(observation->distanceM));
+  animation.setFriendDistanceMeters(observation->distanceM);
 }
 
 void setup() {
@@ -68,6 +50,10 @@ void setup() {
       leds, SoLongConfig::LED_COUNT);
 
   animation.begin();
+  const FriendInfo* ownerInfo = localOwnerInfo();
+  if (ownerInfo != nullptr) {
+    animation.setOwnerColor(ownerInfo->color);
+  }
   animation.setCometSpeedMs(SoLongConfig::COMET_SLOW_MS);
   friendManager.begin();
   bool ok = uwb.begin();

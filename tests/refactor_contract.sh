@@ -7,6 +7,7 @@ test -f firmware/so_long/RangingEngine.h
 test -f firmware/so_long/RangingEngine.cpp
 test -f firmware/so_long/RangingSchedule.h
 test -f firmware/so_long/Debug.h
+test -f firmware/so_long/OwnerIdentity.h
 
 rg "class UWBManager" firmware/so_long/UWBManager.h >/dev/null
 rg "bool begin\\(\\)" firmware/so_long/UWBManager.h >/dev/null
@@ -93,6 +94,11 @@ rg "ranging.update\\(\\)" firmware/so_long/so_long.ino >/dev/null
 rg "ranging.latestObservation\\(\\)" firmware/so_long/so_long.ino >/dev/null
 
 rg "setCometSpeedMs" firmware/so_long/AnimationEngine.h >/dev/null
+rg "setOwnerColor" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null
+rg "ownerColor_" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null
+if rg "FriendId|Identity|FriendInfo|FRIENDS|MY_FRIEND" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null; then
+  exit 1
+fi
 if rg "delay\\(" firmware/so_long/AnimationEngine.cpp firmware/so_long/AnimationEngine.h >/dev/null; then
   exit 1
 fi
