@@ -11,8 +11,8 @@ enum class FriendId : uint8_t {
   JENNIFER,
   MIKE,
   MAGGIE,
-  JAMES,
   MAX,
+  DAVE,
 };
 
 constexpr uint8_t FRIEND_ID_COUNT = 6;

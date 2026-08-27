@@ -33,7 +33,7 @@ rg "RangingState::Listening" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "RangingState::WaitingForResponse" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "RangingState::SendingResponse" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "case RangingState::SendingResponse:" firmware/so_long/RangingEngine.cpp >/dev/null
-rg "updateSendingResponse\\(\\);" firmware/so_long/RangingEngine.cpp >/dev/null
+rg "updateSendingResponse\\(nowMs\\);" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "return false;" firmware/so_long/RangingEngine.cpp >/dev/null
 
 if sed -n '/bool RangingEngine::handlePollFrame/,/bool RangingEngine::handleResponseFrame/p' firmware/so_long/RangingEngine.cpp | rg "latestObservation_" >/dev/null; then

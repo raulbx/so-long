@@ -41,9 +41,9 @@ bool RangingEngine::update() {
     case RangingState::Initiating:
       return updateInitiating(nowMs);
     case RangingState::WaitingForResponse:
-      return updateWaitingForResponse();
+      return updateWaitingForResponse(nowMs);
     case RangingState::SendingResponse:
-      updateSendingResponse();
+      updateSendingResponse(nowMs);
       return false;
   }
 
@@ -51,6 +51,10 @@ bool RangingEngine::update() {
 }
 
 bool RangingEngine::updateListening(uint32_t nowMs) {
+  if (!initiationScheduled_) {
+    scheduleInitialInitiation(nowMs);
+  }
+
   if (!listeningEnabled_) {
     listeningEnabled_ = uwb_.enableReceive();
   }
@@ -71,15 +75,8 @@ bool RangingEngine::updateListening(uint32_t nowMs) {
     listeningEnabled_ = false;
   }
 
-  const uint32_t currentSlot = rangingSlotForTime(nowMs);
-  if (isInitiationSlotForNode(localNodeId_, nowMs) &&
-      currentSlot != lastInitiatedSlot_) {
-    lastInitiatedSlot_ = currentSlot;
-    if (slotsToSkip_ > 0) {
-      slotsToSkip_--;
-      return false;
-    }
-
+  if (rangingTimeReached(nowMs, nextInitiationAtMs_)) {
+    initiationScheduled_ = false;
     state_ = RangingState::Initiating;
     return updateInitiating(nowMs);
   }
@@ -98,13 +95,19 @@ bool RangingEngine::updateInitiating(uint32_t nowMs) {
 
   /* Write frame data to DW IC and prepare transmission. See NOTE 7 below. */
   tx_poll_msg[ALL_MSG_SN_IDX] = frameSeq_;
-  uwb_.transmitAndExpectResponse(tx_poll_msg, sizeof(tx_poll_msg));
+  const int transmitResult =
+      uwb_.transmitAndExpectResponse(tx_poll_msg, sizeof(tx_poll_msg));
+  if (transmitResult != 0) {
+    scheduleRetry(nowMs);
+    returnToListening();
+    return false;
+  }
   state_ = RangingState::WaitingForResponse;
 
   return false;
 }
 
-bool RangingEngine::updateWaitingForResponse() {
+bool RangingEngine::updateWaitingForResponse(uint32_t nowMs) {
   const uint32_t status = uwb_.readStatus();
   if (uwb_.hasReceivedFrame(status)) {
     /* Increment frame sequence number after transmission of the poll message (modulo 256). */
@@ -113,6 +116,11 @@ bool RangingEngine::updateWaitingForResponse() {
     const bool frameRead = readReceivedFrame(&frame_len);
     const bool validObservationCalculated =
         frameRead && handleResponseFrame(frame_len);
+    if (validObservationCalculated) {
+      scheduleAfterSuccess(nowMs);
+    } else {
+      scheduleRetry(nowMs);
+    }
     returnToListening();
     return validObservationCalculated;
   }
@@ -129,20 +137,21 @@ bool RangingEngine::updateWaitingForResponse() {
     // Serial.print("RX timeout/error. Status = 0x");
     // Serial.println(status_reg, HEX);
     uwb_.clearReceiveTimeoutOrError();
-    slotsToSkip_ = missedInitiationSkipSlots(localNodeId_);
+    scheduleRetry(nowMs);
     returnToListening();
   }
 
   return false;
 }
 
-void RangingEngine::updateSendingResponse() {
+void RangingEngine::updateSendingResponse(uint32_t nowMs) {
   const uint32_t status = uwb_.readStatus();
   if (uwb_.hasTransmitComplete(status)) {
     uwb_.clearTransmitComplete();
 
     /* Increment frame sequence number after transmission of the response message (modulo 256). */
     frameSeq_++;
+    scheduleAfterResponse(nowMs);
     returnToListening();
   }
 }
@@ -296,6 +305,30 @@ bool RangingEngine::serializeLocalPresence(uint8_t* destination) {
 void RangingEngine::returnToListening() {
   state_ = RangingState::Listening;
   listeningEnabled_ = false;
+}
+
+void RangingEngine::scheduleInitialInitiation(uint32_t nowMs) {
+  initiationScheduled_ = true;
+  nextInitiationAtMs_ = nowMs + rangingInitialListenMs(localNodeId_);
+}
+
+void RangingEngine::scheduleRetry(uint32_t nowMs) {
+  initiationScheduled_ = true;
+  nextInitiationAtMs_ =
+      nowMs + rangingRetryDelayMs(localNodeId_, failedRangeAttempts_);
+  failedRangeAttempts_++;
+}
+
+void RangingEngine::scheduleAfterSuccess(uint32_t nowMs) {
+  failedRangeAttempts_ = 0;
+  initiationScheduled_ = true;
+  nextInitiationAtMs_ = nowMs + rangingSuccessDelayMs(localNodeId_);
+}
+
+void RangingEngine::scheduleAfterResponse(uint32_t nowMs) {
+  failedRangeAttempts_ = 0;
+  initiationScheduled_ = true;
+  nextInitiationAtMs_ = nowMs + rangingResponseQuietMs(localNodeId_);
 }
 
 float RangingEngine::latestDistanceMeters() const {

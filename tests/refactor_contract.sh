@@ -65,6 +65,11 @@ rg "float latestDistanceMeters\\(\\) const" firmware/so_long/RangingEngine.h >/d
 rg "PresenceObservation latestObservation\\(\\) const" firmware/so_long/RangingEngine.h >/dev/null
 rg "isInitiationSlotForNode" firmware/so_long/RangingSchedule.h >/dev/null
 rg "missedInitiationSkipSlots" firmware/so_long/RangingSchedule.h >/dev/null
+rg "rangingInitialListenMs" firmware/so_long/RangingSchedule.h >/dev/null
+rg "rangingRetryDelayMs" firmware/so_long/RangingSchedule.h >/dev/null
+rg "rangingSuccessDelayMs" firmware/so_long/RangingSchedule.h >/dev/null
+rg "rangingResponseQuietMs" firmware/so_long/RangingSchedule.h >/dev/null
+rg "rangingTimeReached" firmware/so_long/RangingSchedule.h >/dev/null
 rg "RANGING_SLOT_MS = 100" firmware/so_long/RangingSchedule.h >/dev/null
 
 rg "#include \"UWBManager.h\"" firmware/so_long/RangingEngine.h >/dev/null
@@ -86,9 +91,14 @@ rg "UUS_TO_DWT_TIME" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "setDelayedTransmitTime" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "Protocol::serialize" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "Protocol::deserialize" firmware/so_long/RangingEngine.cpp >/dev/null
-rg "isInitiationSlotForNode\\(localNodeId_, nowMs\\)" firmware/so_long/RangingEngine.cpp >/dev/null
-rg "slotsToSkip_" firmware/so_long/RangingEngine.h firmware/so_long/RangingEngine.cpp >/dev/null
-rg "missedInitiationSkipSlots\\(localNodeId_\\)" firmware/so_long/RangingEngine.cpp >/dev/null
+rg "rangingTimeReached\\(nowMs, nextInitiationAtMs_\\)" firmware/so_long/RangingEngine.cpp >/dev/null
+rg "scheduleInitialInitiation" firmware/so_long/RangingEngine.h firmware/so_long/RangingEngine.cpp >/dev/null
+rg "scheduleRetry" firmware/so_long/RangingEngine.h firmware/so_long/RangingEngine.cpp >/dev/null
+rg "scheduleAfterSuccess" firmware/so_long/RangingEngine.h firmware/so_long/RangingEngine.cpp >/dev/null
+rg "scheduleAfterResponse" firmware/so_long/RangingEngine.h firmware/so_long/RangingEngine.cpp >/dev/null
+if rg "slotsToSkip_|lastInitiatedSlot_|isInitiationSlotForNode\\(localNodeId_, nowMs\\)|missedInitiationSkipSlots\\(localNodeId_\\)" firmware/so_long/RangingEngine.h firmware/so_long/RangingEngine.cpp >/dev/null; then
+  exit 1
+fi
 rg "0\\.7 \\* filteredDistanceMeters_ \\+ 0\\.3 \\* distance" firmware/so_long/RangingEngine.cpp >/dev/null
 
 rg "#include \"UWBManager.h\"" firmware/so_long/so_long.ino >/dev/null
