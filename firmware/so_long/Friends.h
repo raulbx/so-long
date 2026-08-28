@@ -16,8 +16,8 @@ static const FriendInfo FRIENDS[] = {
   { FriendId::JENNIFER, "Jennifer", SoLongColors::Red },
   { FriendId::MIKE, "Mike", SoLongColors::Orange },
   { FriendId::MAGGIE, "Maggie", SoLongColors::Green },
-  { FriendId::MAX, "James", SoLongColors::Purple },
-  { FriendId::DAVE, "Max", SoLongColors::Yellow },
+  { FriendId::MAX, "Max", SoLongColors::Purple },
+  { FriendId::DAVE, "Dave", SoLongColors::Cyan },
 };
 
 static const size_t FRIEND_COUNT = sizeof(FRIENDS) / sizeof(FRIENDS[0]);
