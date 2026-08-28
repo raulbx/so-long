@@ -3,16 +3,15 @@
 #include <Arduino.h>
 #include <FastLED.h>
 
-#include "HeartState.h"
+#include "DomainColor.h"
+#include "EmotionalState.h"
 
 class AnimationEngine {
  public:
   AnimationEngine(CRGB* leds, uint16_t ledCount);
 
   void begin();
-  void setFriendColor(CRGB color);
-  void setHeartState(HeartState state);
-  void setCometSpeedMs(uint16_t speedMs);
+  void setEmotionalState(EmotionalState state);
   void update();
 
   void renderComet();
@@ -22,11 +21,18 @@ class AnimationEngine {
  private:
   CRGB* leds_;
   uint16_t ledCount_;
-  CRGB friendColor_;
-  HeartState heartState_;
+  EmotionalState state_;
   uint32_t lastFrameMs_;
   uint32_t lastCometStepMs_;
   uint16_t frame_;
   uint16_t cometPosition_;
-  uint16_t cometSpeedMs_;
+
+  void renderOwnerBreathBackground();
+  void renderApproachingComet();
+  void renderCuriousAcknowledgement();
+  void renderReunitedCelebration();
+  void renderDepartingFade();
+  void renderCometOverlay(uint8_t length, uint8_t brightness);
+  void advanceCometIfDue(uint32_t now, uint16_t motionIntervalMs);
+  CRGB toCrgb(Color color) const;
 };

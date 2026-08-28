@@ -81,7 +81,6 @@ bool UWBManager::begin() {
 
   Serial.println("Range RX");
   Serial.println("Setup over........");
-  Serial.println("DEBUG: new friend-color firmware is running");
 
   return true;
 }

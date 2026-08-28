@@ -58,14 +58,6 @@ const FriendObservation* FriendManager::nearestFriend() const {
   return nearestFriend_;
 }
 
-HeartState FriendManager::heartState() const {
-  if (nearestFriend_ == nullptr) {
-    return HeartState::AMBIENT;
-  }
-
-  return heartStateForDistance(nearestFriend_->distanceM);
-}
-
 int8_t FriendManager::indexFor(FriendId id) const {
   const uint8_t index = static_cast<uint8_t>(id);
   if (index >= kFriendSlotCount) {
@@ -73,16 +65,4 @@ int8_t FriendManager::indexFor(FriendId id) const {
   }
 
   return index;
-}
-
-HeartState FriendManager::heartStateForDistance(float distanceM) const {
-  if (distanceM < 1.0f) {
-    return HeartState::FRIEND_FOUND;
-  }
-
-  if (distanceM < 3.0f) {
-    return HeartState::FRIEND_NEAR;
-  }
-
-  return HeartState::FRIEND_DETECTED;
 }

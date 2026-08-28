@@ -26,13 +26,17 @@ class RangingEngine {
  private:
   bool updateListening(uint32_t nowMs);
   bool updateInitiating(uint32_t nowMs);
-  bool updateWaitingForResponse();
-  void updateSendingResponse();
+  bool updateWaitingForResponse(uint32_t nowMs);
+  void updateSendingResponse(uint32_t nowMs);
   bool readReceivedFrame(uint16_t* frameLen);
   bool handlePollFrame(uint16_t frameLen);
   bool handleResponseFrame(uint16_t frameLen);
   bool serializeLocalPresence(uint8_t* destination);
   void returnToListening();
+  void scheduleInitialInitiation(uint32_t nowMs);
+  void scheduleRetry(uint32_t nowMs);
+  void scheduleAfterSuccess(uint32_t nowMs);
+  void scheduleAfterResponse(uint32_t nowMs);
 
   UWBManager& uwb_;
   const NodeId localNodeId_;
@@ -40,8 +44,9 @@ class RangingEngine {
   RangingState state_ = RangingState::Listening;
   bool listeningEnabled_ = false;
   uint8_t frameSeq_ = 0;
-  uint32_t lastInitiatedSlot_ = UINT32_MAX;
-  uint8_t slotsToSkip_ = 0;
+  bool initiationScheduled_ = false;
+  uint32_t nextInitiationAtMs_ = 0;
+  uint8_t failedRangeAttempts_ = 0;
   uint32_t lastRangeAttemptMs_ = 0;
   float latestDistanceMeters_ = -1.0f;
   float filteredDistanceMeters_ = -1.0f;

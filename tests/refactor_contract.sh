@@ -7,6 +7,12 @@ test -f firmware/so_long/RangingEngine.h
 test -f firmware/so_long/RangingEngine.cpp
 test -f firmware/so_long/RangingSchedule.h
 test -f firmware/so_long/Debug.h
+test -f firmware/so_long/OwnerIdentity.h
+test -f firmware/so_long/DomainColor.h
+test -f firmware/so_long/Emotion.h
+test -f firmware/so_long/EmotionalState.h
+test -f firmware/so_long/EmotionalStateEngine.h
+test -f firmware/so_long/EmotionalStateEngine.cpp
 
 rg "class UWBManager" firmware/so_long/UWBManager.h >/dev/null
 rg "bool begin\\(\\)" firmware/so_long/UWBManager.h >/dev/null
@@ -59,6 +65,11 @@ rg "float latestDistanceMeters\\(\\) const" firmware/so_long/RangingEngine.h >/d
 rg "PresenceObservation latestObservation\\(\\) const" firmware/so_long/RangingEngine.h >/dev/null
 rg "isInitiationSlotForNode" firmware/so_long/RangingSchedule.h >/dev/null
 rg "missedInitiationSkipSlots" firmware/so_long/RangingSchedule.h >/dev/null
+rg "rangingInitialListenMs" firmware/so_long/RangingSchedule.h >/dev/null
+rg "rangingRetryDelayMs" firmware/so_long/RangingSchedule.h >/dev/null
+rg "rangingSuccessDelayMs" firmware/so_long/RangingSchedule.h >/dev/null
+rg "rangingResponseQuietMs" firmware/so_long/RangingSchedule.h >/dev/null
+rg "rangingTimeReached" firmware/so_long/RangingSchedule.h >/dev/null
 rg "RANGING_SLOT_MS = 100" firmware/so_long/RangingSchedule.h >/dev/null
 
 rg "#include \"UWBManager.h\"" firmware/so_long/RangingEngine.h >/dev/null
@@ -80,9 +91,14 @@ rg "UUS_TO_DWT_TIME" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "setDelayedTransmitTime" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "Protocol::serialize" firmware/so_long/RangingEngine.cpp >/dev/null
 rg "Protocol::deserialize" firmware/so_long/RangingEngine.cpp >/dev/null
-rg "isInitiationSlotForNode\\(localNodeId_, nowMs\\)" firmware/so_long/RangingEngine.cpp >/dev/null
-rg "slotsToSkip_" firmware/so_long/RangingEngine.h firmware/so_long/RangingEngine.cpp >/dev/null
-rg "missedInitiationSkipSlots\\(localNodeId_\\)" firmware/so_long/RangingEngine.cpp >/dev/null
+rg "rangingTimeReached\\(nowMs, nextInitiationAtMs_\\)" firmware/so_long/RangingEngine.cpp >/dev/null
+rg "scheduleInitialInitiation" firmware/so_long/RangingEngine.h firmware/so_long/RangingEngine.cpp >/dev/null
+rg "scheduleRetry" firmware/so_long/RangingEngine.h firmware/so_long/RangingEngine.cpp >/dev/null
+rg "scheduleAfterSuccess" firmware/so_long/RangingEngine.h firmware/so_long/RangingEngine.cpp >/dev/null
+rg "scheduleAfterResponse" firmware/so_long/RangingEngine.h firmware/so_long/RangingEngine.cpp >/dev/null
+if rg "slotsToSkip_|lastInitiatedSlot_|isInitiationSlotForNode\\(localNodeId_, nowMs\\)|missedInitiationSkipSlots\\(localNodeId_\\)" firmware/so_long/RangingEngine.h firmware/so_long/RangingEngine.cpp >/dev/null; then
+  exit 1
+fi
 rg "0\\.7 \\* filteredDistanceMeters_ \\+ 0\\.3 \\* distance" firmware/so_long/RangingEngine.cpp >/dev/null
 
 rg "#include \"UWBManager.h\"" firmware/so_long/so_long.ino >/dev/null
@@ -91,9 +107,52 @@ rg "RangingEngine ranging\\(uwb, MY_NODE_ID, MY_FRIEND\\)" firmware/so_long/so_l
 rg "uwb.begin\\(\\)" firmware/so_long/so_long.ino >/dev/null
 rg "ranging.update\\(\\)" firmware/so_long/so_long.ino >/dev/null
 rg "ranging.latestObservation\\(\\)" firmware/so_long/so_long.ino >/dev/null
+rg "EmotionalStateEngine emotionalState" firmware/so_long/so_long.ino >/dev/null
+rg "updateEmotionalState\\(friendManager\\.nearestFriend\\(\\), nowMs\\)" firmware/so_long/so_long.ino >/dev/null
+rg "emotionalState\\.update\\(" firmware/so_long/so_long.ino >/dev/null
+rg "animation\\.setEmotionalState\\(emotionalState\\.currentState\\(\\)\\)" firmware/so_long/so_long.ino >/dev/null
 
-rg "setCometSpeedMs" firmware/so_long/AnimationEngine.h >/dev/null
+rg "APPROACHING" firmware/so_long/Emotion.h >/dev/null
+rg "REUNITED_ENTER_DISTANCE_M = 2\\.0f" firmware/so_long/Config.h >/dev/null
+rg "REUNITED_EXIT_DISTANCE_M = 2\\.5f" firmware/so_long/Config.h >/dev/null
+rg "APPROACHING_WINDOW_MS = 1500" firmware/so_long/Config.h >/dev/null
+rg "APPROACHING_ENTER_DELTA_M = 0\\.5f" firmware/so_long/Config.h >/dev/null
+rg "APPROACHING_EXIT_DELTA_M = 0\\.2f" firmware/so_long/Config.h >/dev/null
+rg "APPROACHING_EFFECT_SIZE_BOOST" firmware/so_long/Config.h >/dev/null
+rg "APPROACHING_INTENSITY_BOOST" firmware/so_long/Config.h >/dev/null
+rg "APPROACHING_MOTION_INTERVAL_REDUCTION_MS" firmware/so_long/Config.h >/dev/null
+rg "approachBaselineDistanceM_" firmware/so_long/EmotionalStateEngine.h firmware/so_long/EmotionalStateEngine.cpp >/dev/null
+rg "approachBaselineAtMs_" firmware/so_long/EmotionalStateEngine.h firmware/so_long/EmotionalStateEngine.cpp >/dev/null
+rg "resetApproachTrend" firmware/so_long/EmotionalStateEngine.h firmware/so_long/EmotionalStateEngine.cpp >/dev/null
+rg "updateApproachTrend" firmware/so_long/EmotionalStateEngine.h firmware/so_long/EmotionalStateEngine.cpp >/dev/null
+
+rg "setEmotionalState\\(EmotionalState state\\)" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null
+rg "renderOwnerBreathBackground" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null
+rg "renderApproachingComet" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null
+rg "toCrgb\\(Color color\\)" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null
+if rg "FriendId|Identity|FriendInfo|FRIENDS|MY_FRIEND" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null; then
+  exit 1
+fi
+if rg "HeartState" firmware/so_long/AnimationEngine.h firmware/so_long/AnimationEngine.cpp >/dev/null; then
+  exit 1
+fi
 if rg "delay\\(" firmware/so_long/AnimationEngine.cpp firmware/so_long/AnimationEngine.h >/dev/null; then
+  exit 1
+fi
+
+if rg "Arduino|FastLED|CRGB|DW3000|dw3000|UWBManager|RangingEngine" firmware/so_long/DomainColor.h firmware/so_long/Emotion.h firmware/so_long/EmotionalState.h firmware/so_long/FriendId.h firmware/so_long/NodeId.h firmware/so_long/HeartState.h >/dev/null; then
+  exit 1
+fi
+
+if rg "FastLED|CRGB|DW3000|dw3000|UWBManager|RangingEngine" firmware/so_long/EmotionalStateEngine.h firmware/so_long/EmotionalStateEngine.cpp >/dev/null; then
+  exit 1
+fi
+
+if rg "FastLED|CRGB" firmware/so_long/Friends.h >/dev/null; then
+  exit 1
+fi
+
+if rg "VisualState" firmware/so_long >/dev/null; then
   exit 1
 fi
 

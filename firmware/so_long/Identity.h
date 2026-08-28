@@ -34,6 +34,18 @@ constexpr FriendId MY_FRIEND = FriendId::RAHUL;
 #elif SO_LONG_BOARD_ID == 2
 constexpr NodeId MY_NODE_ID = 2;
 constexpr FriendId MY_FRIEND = FriendId::JENNIFER;
+#elif SO_LONG_BOARD_ID == 3
+constexpr NodeId MY_NODE_ID = 3;
+constexpr FriendId MY_FRIEND = FriendId::MIKE;
+#elif SO_LONG_BOARD_ID == 4
+constexpr NodeId MY_NODE_ID = 4;
+constexpr FriendId MY_FRIEND = FriendId::MAGGIE;
+#elif SO_LONG_BOARD_ID == 5
+constexpr NodeId MY_NODE_ID = 5;
+constexpr FriendId MY_FRIEND = FriendId::MAX;
+#elif SO_LONG_BOARD_ID == 6
+constexpr NodeId MY_NODE_ID = 6;
+constexpr FriendId MY_FRIEND = FriendId::DAVE;
 #else
 #error "Unsupported SO_LONG_BOARD_ID. Use 1 for Board A or 2 for Board B."
 #endif

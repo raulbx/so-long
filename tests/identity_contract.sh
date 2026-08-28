@@ -3,6 +3,8 @@ set -eu
 
 test -f firmware/so_long/Identity.h
 test -f firmware/so_long/NodeId.h
+test -f firmware/so_long/OwnerIdentity.h
+test -f firmware/so_long/DomainColor.h
 
 rg "SO_LONG_BOARD_ID" firmware/so_long/Identity.h >/dev/null
 rg "#if SO_LONG_BOARD_ID == 1" firmware/so_long/Identity.h >/dev/null
@@ -12,9 +14,15 @@ rg "FriendId::JENNIFER" firmware/so_long/Identity.h >/dev/null
 rg "using NodeId = uint8_t" firmware/so_long/NodeId.h >/dev/null
 rg "FriendId = who the heart belongs to" firmware/so_long/Identity.h >/dev/null
 rg "NodeId = which physical radio/device this is" firmware/so_long/Identity.h >/dev/null
+rg "struct Color" firmware/so_long/DomainColor.h >/dev/null
 
 rg "#include \"Identity.h\"" firmware/so_long/so_long.ino >/dev/null
-rg "FriendId activeFriendId = MY_FRIEND" firmware/so_long/so_long.ino >/dev/null
+rg "#include \"OwnerIdentity.h\"" firmware/so_long/so_long.ino >/dev/null
+rg "#include \"EmotionalStateEngine.h\"" firmware/so_long/so_long.ino >/dev/null
+rg "localOwnerInfo\\(\\)" firmware/so_long/so_long.ino firmware/so_long/OwnerIdentity.h >/dev/null
+rg "friendInfoFor\\(observation->id\\)" firmware/so_long/so_long.ino >/dev/null
+rg "emotionalState\\.begin\\(ownerInfo->color\\)" firmware/so_long/so_long.ino >/dev/null
+rg "animation\\.setEmotionalState\\(emotionalState\\.currentState\\(\\)\\)" firmware/so_long/so_long.ino >/dev/null
 rg "RangingEngine ranging\\(uwb, MY_NODE_ID, MY_FRIEND\\)" firmware/so_long/so_long.ino >/dev/null
 rg "friendManager\\.observe\\(ranging\\.latestObservation\\(\\), nowMs\\)" firmware/so_long/so_long.ino >/dev/null
 
@@ -29,6 +37,28 @@ c++ -std=c++17 -DSO_LONG_BOARD_ID=1 -Itests/stubs -Ifirmware/so_long \
 c++ -std=c++17 -DSO_LONG_BOARD_ID=2 -Itests/stubs -Ifirmware/so_long \
   tests/ranging_schedule_behavior.cpp -o /tmp/ranging_schedule_board_b
 /tmp/ranging_schedule_board_b
+
+c++ -std=c++17 -DSO_LONG_BOARD_ID=1 -Itests/stubs -Ifirmware/so_long \
+  tests/emotional_state_behavior.cpp firmware/so_long/EmotionalStateEngine.cpp \
+  firmware/so_long/FriendManager.cpp \
+  -o /tmp/emotional_state_board_a
+/tmp/emotional_state_board_a
+
+c++ -std=c++17 -DSO_LONG_BOARD_ID=2 -Itests/stubs -Ifirmware/so_long \
+  tests/emotional_state_behavior.cpp firmware/so_long/EmotionalStateEngine.cpp \
+  firmware/so_long/FriendManager.cpp \
+  -o /tmp/emotional_state_board_b
+/tmp/emotional_state_board_b
+
+c++ -std=c++17 -DSO_LONG_BOARD_ID=1 -Itests/stubs -Ifirmware/so_long \
+  tests/owner_idle_animation_behavior.cpp firmware/so_long/AnimationEngine.cpp \
+  -o /tmp/owner_idle_board_a
+/tmp/owner_idle_board_a
+
+c++ -std=c++17 -DSO_LONG_BOARD_ID=2 -Itests/stubs -Ifirmware/so_long \
+  tests/owner_idle_animation_behavior.cpp firmware/so_long/AnimationEngine.cpp \
+  -o /tmp/owner_idle_board_b
+/tmp/owner_idle_board_b
 
 if ! git diff --quiet -- firmware/prototypes/working_range_rx_with_led.ino; then
   exit 1
