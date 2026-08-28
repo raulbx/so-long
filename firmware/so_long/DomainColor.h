@@ -17,10 +17,11 @@ namespace SoLongColors {
 constexpr Color Black{0, 0, 0};
 constexpr Color Blue{0, 0, 255};
 constexpr Color Red{255, 0, 0};
-constexpr Color Orange{255, 165, 0};
-constexpr Color Green{0, 128, 0};
-constexpr Color Purple{128, 0, 128};
+constexpr Color Orange{255,140,0};
+constexpr Color Green{0, 180, 0};
+constexpr Color Purple{180, 0, 180};
 constexpr Color Yellow{255, 255, 0};
 constexpr Color DeepSkyBlue{0, 191, 255};
+constexpr Color Cyan{0, 255, 255};
 
 }  // namespace SoLongColors
